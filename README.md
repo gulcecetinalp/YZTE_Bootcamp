@@ -129,8 +129,8 @@ Aldığımız önemli kararlar:
 | İsim | Rol |
 |---|---|
 | Rana Balcı | Product Owner |
-| Duygu Selin Alkan | Scrum Master |
-| Gülçe Çetinalp | Developer |
+| Gülçe Çetinalp | Scrum Master | 
+| Duygu Selin Alkan | Developer |
 | Furkan Altas | Developer |
 | Muhammed Aydın | Developer |
 
