@@ -12,10 +12,10 @@ pip install -r requirements.txt
 ## Çalıştırma
 
 ```bash
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --reload --port 8001
 ```
 
-- API dokümantasyonu: http://localhost:8000/docs
+- API dokümantasyonu: http://localhost:8001/docs
 - Health check: `GET /health`
 - CSV yükleme: `POST /api/upload` (multipart form, alan adı: `file`)
 

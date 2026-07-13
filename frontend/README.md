@@ -13,6 +13,6 @@ npm install
 npm run dev
 ```
 
-Uygulama http://localhost:3000 adresinde açılır. CSV yükleme akışının çalışması için backend'in http://localhost:8000 üzerinde ayakta olması gerekir (bkz. `backend/README.md`).
+Uygulama http://localhost:3000 adresinde açılır. CSV yükleme akışının çalışması için backend'in http://localhost:8001 üzerinde ayakta olması gerekir (bkz. `backend/README.md`).
 
-Backend farklı bir adresteyse `frontend/.env.local` dosyasına `NEXT_PUBLIC_API_URL=<adres>` yazın; varsayılan `http://localhost:8000`.
+Backend farklı bir adresteyse `frontend/.env.local` dosyasına `NEXT_PUBLIC_API_URL=<adres>` yazın; varsayılan `http://localhost:8001`.
