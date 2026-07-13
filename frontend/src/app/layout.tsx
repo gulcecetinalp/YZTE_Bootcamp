@@ -20,7 +20,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    // suppressHydrationWarning: tarayıcı eklentileri (ör. Trancy) <html>'e
+    // attribute enjekte edip sahte hydration uyarısı üretiyor
+    <html lang="en" suppressHydrationWarning>
       <body className="min-h-screen antialiased">
         <header className="border-b border-emerald-950/60 bg-[#070d0b]">
           <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
