@@ -1,13 +1,13 @@
 import io
 import uuid
-from pathlib import Path
 
 import pandas as pd
 from fastapi import APIRouter, HTTPException, UploadFile
 
+from app.storage import UPLOAD_DIR, csv_path
+
 router = APIRouter(prefix="/api", tags=["upload"])
 
-UPLOAD_DIR = Path(__file__).resolve().parents[2] / "uploads"
 MAX_FILE_SIZE = 20 * 1024 * 1024  # 20 MB
 PREVIEW_ROWS = 5
 
@@ -32,7 +32,7 @@ async def upload_csv(file: UploadFile):
 
     file_id = str(uuid.uuid4())
     UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-    (UPLOAD_DIR / f"{file_id}.csv").write_bytes(contents)
+    csv_path(file_id).write_bytes(contents)
 
     preview = df.head(PREVIEW_ROWS).where(df.head(PREVIEW_ROWS).notna(), None)
 
