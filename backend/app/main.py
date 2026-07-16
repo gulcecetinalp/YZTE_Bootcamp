@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import anonymize, health, upload
+from app.routers import anonymize, health, synthetic, upload
 
 app = FastAPI(
     title="AegisAI API",
@@ -20,3 +20,4 @@ app.add_middleware(
 app.include_router(health.router)
 app.include_router(upload.router)
 app.include_router(anonymize.router)
+app.include_router(synthetic.router)
