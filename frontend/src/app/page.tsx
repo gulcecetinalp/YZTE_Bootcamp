@@ -1,7 +1,12 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { uploadCsv, type UploadResponse } from "@/lib/api";
+import {
+  uploadCsv,
+  anonymizeCsv,
+  type UploadResponse,
+  type AnonymizeResponse,
+} from "@/lib/api";
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -9,17 +14,42 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+const SENSITIVITY_LABEL: Record<string, string> = {
+  direct: "Doğrudan Tanımlayıcı",
+  quasi: "Dolaylı Tanımlayıcı",
+};
+
+const ACTION_LABEL: Record<string, string> = {
+  hashed: "Hash",
+  masked: "Maskelendi",
+  kept: "Olduğu gibi bırakıldı",
+};
+
+const ACTION_COLOR: Record<string, string> = {
+  hashed: "text-blue-400 bg-blue-500/10 border-blue-500/30",
+  masked: "text-amber-400 bg-amber-500/10 border-amber-500/30",
+  kept: "text-neutral-400 bg-neutral-500/10 border-neutral-500/30",
+};
+
+const SENSITIVITY_COLOR: Record<string, string> = {
+  direct: "text-red-400 bg-red-500/10 border-red-500/30",
+  quasi: "text-yellow-400 bg-yellow-500/10 border-yellow-500/30",
+};
+
 export default function Home() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<UploadResponse | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<AnonymizeResponse | null>(null);
 
   function selectFile(selected: File | null) {
     setError(null);
     setResult(null);
+    setAnalysisResult(null);
     if (!selected) return;
     if (!selected.name.toLowerCase().endsWith(".csv")) {
       setFile(null);
@@ -39,12 +69,26 @@ export default function Home() {
     if (!file || uploading) return;
     setUploading(true);
     setError(null);
+    setAnalysisResult(null);
     try {
       setResult(await uploadCsv(file));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed.");
     } finally {
       setUploading(false);
+    }
+  }
+
+  async function handleAnalyze() {
+    if (!result || analyzing) return;
+    setAnalyzing(true);
+    setError(null);
+    try {
+      setAnalysisResult(await anonymizeCsv(result.file_id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Analiz başarısız oldu.");
+    } finally {
+      setAnalyzing(false);
     }
   }
 
@@ -144,6 +188,20 @@ export default function Home() {
                 </dd>
               </div>
             </dl>
+
+            {/* Analiz Et butonu */}
+            <button
+              id="analyze-btn"
+              onClick={handleAnalyze}
+              disabled={analyzing || !!analysisResult}
+              className="mt-6 w-full rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {analyzing
+                ? "Analiz ediliyor..."
+                : analysisResult
+                ? "✓ Analiz Tamamlandı"
+                : "Analiz Et & Anonimleştir"}
+            </button>
           </div>
 
           <div className="rounded-2xl border border-emerald-950/70 bg-[#0e1613] p-6 lg:col-span-2">
@@ -188,6 +246,137 @@ export default function Home() {
           </div>
         </section>
       )}
+
+      {/* ── Analiz Sonuçları Paneli ── */}
+      {analysisResult && (
+        <section id="analysis-results" className="space-y-6">
+          <h2 className="text-2xl font-bold">
+            🔍 Analiz Sonuçları
+          </h2>
+
+          {/* Özet kartlar */}
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="rounded-2xl border border-emerald-950/70 bg-[#0e1613] p-5 text-center">
+              <p className="text-sm text-neutral-500">Tespit Edilen Hassas Kolon</p>
+              <p className="mt-2 text-3xl font-bold text-emerald-400">
+                {analysisResult.detections.length}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-red-900/40 bg-[#0e1613] p-5 text-center">
+              <p className="text-sm text-neutral-500">Doğrudan Tanımlayıcı</p>
+              <p className="mt-2 text-3xl font-bold text-red-400">
+                {analysisResult.detections.filter((d) => d.sensitivity === "direct").length}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-yellow-900/40 bg-[#0e1613] p-5 text-center">
+              <p className="text-sm text-neutral-500">Dolaylı Tanımlayıcı</p>
+              <p className="mt-2 text-3xl font-bold text-yellow-400">
+                {analysisResult.detections.filter((d) => d.sensitivity === "quasi").length}
+              </p>
+            </div>
+          </div>
+
+          {/* Tespit tablosu */}
+          <div className="rounded-2xl border border-emerald-950/70 bg-[#0e1613] p-6">
+            <h3 className="text-lg font-semibold">Tespit Detayları</h3>
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b border-neutral-800 text-neutral-500">
+                    <th className="px-3 py-2 font-medium">Kolon</th>
+                    <th className="px-3 py-2 font-medium">Kategori</th>
+                    <th className="px-3 py-2 font-medium">Duyarlılık</th>
+                    <th className="px-3 py-2 font-medium">Tespit Yöntemi</th>
+                    <th className="px-3 py-2 font-medium">Uygulanan İşlem</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {analysisResult.detections.map((det) => {
+                    const actionObj = analysisResult.actions.find(
+                      (a) => a.column === det.column
+                    );
+                    return (
+                      <tr key={det.column} className="border-b border-neutral-900">
+                        <td className="px-3 py-2 font-mono text-xs text-emerald-300">
+                          {det.column}
+                        </td>
+                        <td className="px-3 py-2 capitalize">{det.category}</td>
+                        <td className="px-3 py-2">
+                          <span
+                            className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${
+                              SENSITIVITY_COLOR[det.sensitivity] ?? ""
+                            }`}
+                          >
+                            {SENSITIVITY_LABEL[det.sensitivity] ?? det.sensitivity}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 text-neutral-400">
+                          {det.detected_by === "column_name"
+                            ? "Kolon adı"
+                            : "İçerik regex"}
+                          {det.match_ratio !== null && (
+                            <span className="ml-1 text-xs text-neutral-600">
+                              ({(det.match_ratio * 100).toFixed(0)}%)
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2">
+                          {actionObj && (
+                            <span
+                              className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${
+                                ACTION_COLOR[actionObj.action] ?? ""
+                              }`}
+                            >
+                              {ACTION_LABEL[actionObj.action] ?? actionObj.action}
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Anonimleştirilmiş önizleme */}
+          <div className="rounded-2xl border border-emerald-950/70 bg-[#0e1613] p-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">
+                Anonimleştirilmiş Veri Önizlemesi (ilk 5 satır)
+              </h3>
+              <span className="rounded-full border border-emerald-500/40 px-3 py-0.5 text-xs text-emerald-400">
+                ID: {analysisResult.anonymized_file_id.slice(0, 8)}…
+              </span>
+            </div>
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b border-neutral-800 text-neutral-500">
+                    {Object.keys(analysisResult.preview[0] ?? {}).map((col) => (
+                      <th key={col} className="px-3 py-2 font-medium">
+                        {col}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {analysisResult.preview.map((row, i) => (
+                    <tr key={i} className="border-b border-neutral-900">
+                      {Object.entries(row).map(([col, val]) => (
+                        <td key={col} className="px-3 py-2 whitespace-nowrap">
+                          {val === null ? "—" : String(val)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      )}
     </div>
   );
 }
+
