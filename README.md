@@ -4,9 +4,11 @@ Kullanıcıların yüklediği CSV veri setlerindeki hassas/kişisel verileri tes
 
 **Grup:** 85
 **Bootcamp:** YZTA Bootcamp 2026 - 5. Akademi Dönemi (T3 Vakfı, Google, Sanayi ve Teknoloji Bakanlığı destekli)
-**Sprint:** Sprint 1 (19 Haziran - 5 Temmuz 2026)
+**Güncel Sprint:** Sprint 2 (6-19 Temmuz 2026) — Sprint 1 kanıtları da bu dosyada arşivlenmiştir.
 
 ---
+
+# 🏁 Sprint 1 (19 Haziran - 5 Temmuz 2026)
 
 ## 📋 Product Backlog
 
@@ -104,7 +106,7 @@ Aldığımız önemli kararlar:
 **Geliştirilmesi gereken yönler:**
 
 - UI mockup'lar gerçek veri setine (Bank Churn) ve ürün adına (AegisAI) göre tasarlanmadı, Sprint 2'ye ek iş olarak kaldı.
-- Sprint'in büyük kısmı son günlerde yoğun şekilde ilerletildi; bu nedenle tamamlanan bazı işler (Task 1, 2, 4) Jira'da henüz "Tamam" olarak işaretlenmedi — board güncellenecek.
+- Sprint'in büyük kısmı son günlerde yoğun şekilde ilerletildi; bu nedenle tamamlanan bazı işler Jira'da geç işaretlendi.
 
 **Sprint 2 için planlanan değişiklikler:**
 
@@ -112,6 +114,96 @@ Aldığımız önemli kararlar:
 - Görevlere sprint başında başlanacak, son güne bırakılmayacak.
 - Sprint 2'nin iş yükü Sprint 1'e göre çok daha ağır olduğu için backend görevleri şu öncelik sırasıyla ilerletilecek: (1) FastAPI iskeleti ve CSV upload endpoint'i, (2) hassas veri tespiti ve anonimleştirme, (3) sentetik veri üretimi (CTGAN/SDV), (4) frontend-backend entegrasyonu, (5) AI Agent / deployment / dokümantasyon.
 - UI mockup'ları AegisAI adına ve gerçek Bank Churn kolonlarına (CreditScore, Geography, Balance vb.) uyarlanacak.
+
+---
+
+# 🚀 Sprint 2 (6-19 Temmuz 2026)
+
+## 📋 Product Backlog
+
+Sprint 2 kapsamında 5 Story ve 13 Task board'a aktarıldı:
+- **Story 4 — FastAPI Backend İskeletinin Kurulması** (proje yapısı, health-check, CSV upload endpoint'i)
+- **Story 5 — Next.js Frontend Temel Yapısının Kurulması** (proje kurulumu, CSV yükleme arayüzü)
+- **Story 6 — Veri Anonimleştirme Servisi** (hassas veri tespiti, anonimleştirme, endpoint)
+- **Story 7 — Sentetik Veri Üretim Modülü** (CTGAN/SDV denemesi, Faker yedek yöntemi, endpoint)
+- **Story 8 — İlk Full-Stack Akışın Kurulması** (frontend-backend bağlantısı, sonuçların arayüzde gösterilmesi)
+
+**Link:** https://balcirana2.atlassian.net/jira/software/projects/SCRUM/boards/1/backlog
+
+**Ekran Görüntüsü:**
+
+🔴 [DOLDURULACAK: Jira board'un Sprint 2 görünümünün ekran görüntüsünü al, `gorseller/jira-board-sprint2.png` olarak kaydet]
+
+---
+
+## 🎯 Sprint Puanlaması
+
+**Sprint 2 Toplam Story Point:** 68 SP
+
+**Tamamlanan:** Kod tarafında incelediğimde 5 Story'nin de (13 Task) karşılığı repoda mevcut — ama bu benim kod üzerinden yaptığım bir tespit, gerçek Jira board durumunu teyit etmen lazım:
+
+| Story | Planlanan SP | Kodda görünen durum |
+|---|---|---|
+| Story 4: FastAPI Backend İskeleti | 12 SP | ✅ `backend/app/main.py`, `routers/health.py`, `routers/upload.py` mevcut |
+| Story 5: Next.js Frontend Temel Yapısı | 10 SP | ✅ `frontend/` projesi kurulu, upload arayüzü `page.tsx` içinde |
+| Story 6: Veri Anonimleştirme Servisi | 18 SP | ✅ `services/detection.py`, `services/anonymization.py`, `routers/anonymize.py` mevcut |
+| Story 7: Sentetik Veri Üretim Modülü | 18 SP | ✅ `services/synthetic_ctgan.py`, `services/synthetic_faker.py`, `routers/synthetic.py` mevcut |
+| Story 8: İlk Full-Stack Akış | 10 SP | ✅ `frontend/src/lib/api.ts` backend'e bağlanıyor, sonuç `page.tsx`'te gösteriliyor |
+| **Toplam** | **68 SP** | 🔴 [DOLDURULACAK: Jira board'daki gerçek Tamamlanan SP sayısı] |
+
+> **Not:** Sentetik veri üretimi (`/synthetic/{file_id}`) backend'de çalışır durumda ama henüz frontend'e bağlanmadı — bu beklenen bir durum, orijinal/sentetik veri karşılaştırmasının arayüzde gösterilmesi Sprint 3'ün Story 9'unda planlanmıştı.
+
+---
+
+## 💬 Daily Scrum
+
+**Nasıl gerçekleştirdik:** 🔴 [DOLDURULACAK: Sprint 1'dekiyle aynı mı (Slack huddle, 21:00) yoksa değişti mi?]
+
+**Ekran Görüntüsü:**
+
+🔴 [DOLDURULACAK: Sprint 2'ye ait bir daily scrum ekran görüntüsü — `gorseller/` klasörüne ekle]
+
+---
+
+## 🖥️ Ürün Geliştirme Durumu
+
+**Mevcut durum:** Sprint 2 sonunda uçtan uca çalışan bir prototip ortaya çıktı:
+
+- **Backend (FastAPI, `backend/`):** `uvicorn` ile port 8001'de çalışıyor. 4 router aktif: `GET /health` (sağlık kontrolü), `POST /upload` (CSV yükleme, dosyayı `uploads/{file_id}.csv` olarak saklıyor), `POST /anonymize/{file_id}` (kolon adı analizi + regex ile hassas veri tespiti, maskeleme/hash'leme, sonucu yeni bir `file_id` ile ayrı kaydediyor ve tespit/aksiyon raporu döndürüyor), `POST /synthetic/{file_id}` (SDV/CTGAN ile sentetik veri üretimi, sorun durumunda Faker + istatistiksel kural tabanlı yedek yönteme düşüyor).
+- **Frontend (Next.js + Tailwind, `frontend/`):** `localhost:3000`'de çalışıyor, backend'e `NEXT_PUBLIC_API_URL` ile bağlanıyor. Kullanıcı CSV dosyasını sürükle-bırak veya seçerek yükleyebiliyor, ardından "analiz et" ile backend'in anonimleştirme sonucunu (tespit edilen hassas kolonlar + uygulanan aksiyon) arayüzde görebiliyor.
+- Hassas veri tespiti şu an regex + kolon adı analiziyle çalışıyor; Presidio/SpaCy entegrasyonu sonraki iterasyona bırakıldı (backend README'sinde not edilmiş).
+
+**Ekran Görüntüleri:**
+
+🔴 [DOLDURULACAK: Uygulamayı çalıştırıp (backend `uvicorn app.main:app --reload --port 8001`, frontend `npm run dev`) upload ekranı ve anonimleştirme sonuç ekranından birer ekran görüntüsü al. İstersen bunu senin için ben de yapabilirim — bkz. mesajın altındaki not.]
+
+---
+
+## 🔍 Sprint Review
+
+Sprint 2 boyunca şunları tamamladık:
+
+- **Story 4 (FastAPI Backend İskeleti):** Router/service/model katmanlı proje yapısı kuruldu, `/health` ve `/upload` endpoint'leri yazıldı.
+- **Story 5 (Next.js Frontend):** Next.js + Tailwind projesi kuruldu, sürükle-bırak destekli CSV yükleme arayüzü kodlandı.
+- **Story 6 (Anonimleştirme Servisi):** Hassas veri tespit fonksiyonları (regex + kolon adı analizi) ve anonimleştirme (maskeleme/hash) mantığı yazıldı, `/anonymize/{file_id}` endpoint'i olarak sunuldu.
+- **Story 7 (Sentetik Veri Üretimi):** SDV/CTGAN ile birincil yöntem, Faker + istatistiksel kural ile yedek yöntem yazıldı, `/synthetic/{file_id}` endpoint'i olarak sunuldu.
+- **Story 8 (Full-Stack Akış):** Frontend, backend'e bağlandı; upload ve anonimleştirme sonucu arayüzde gösteriliyor.
+
+Aldığımız önemli kararlar:
+
+- Backend port'u 8001 olarak sabitlendi (frontend'in varsayılan 3000 portuyla çakışmasın diye).
+- Anonimleştirilmiş veri orijinalin üzerine yazılmıyor; ayrı bir `file_id` ile saklanıyor — orijinal veri korunuyor.
+- Hassas veri tespitinde ilk iterasyon regex + kolon adı analiziyle sınırlı tutuldu, Presidio/SpaCy Sprint 3'e ertelendi.
+
+---
+
+## 🔄 Sprint Retrospective
+
+**İyi giden yönler:** 🔴 [DOLDURULACAK]
+
+**Geliştirilmesi gereken yönler:** 🔴 [DOLDURULACAK]
+
+**Sprint 3 için planlanan değişiklikler:** 🔴 [DOLDURULACAK — ör. AI Agent entegrasyonu, orijinal/sentetik veri karşılaştırma ekranı, hata yönetimi, deployment, final dokümantasyon]
 
 ---
 
@@ -129,8 +221,7 @@ Aldığımız önemli kararlar:
 | İsim | Rol |
 |---|---|
 | Rana Balcı | Product Owner |
-| Gülçe Çetinalp | Scrum Master | 
+| Gülçe Çetinalp | Scrum Master |
 | Duygu Selin Alkan | Developer |
 | Furkan Altas | Developer |
 | Muhammed Aydın | Developer |
-
