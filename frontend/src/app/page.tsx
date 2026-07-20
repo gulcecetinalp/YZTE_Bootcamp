@@ -4,8 +4,10 @@ import { useId, useState } from "react";
 import {
   uploadCsv,
   anonymizeCsv,
+  synthesizeCsv,
   type UploadResponse,
   type AnonymizeResponse,
+  type SyntheticResponse,
 } from "@/lib/api";
 
 function formatBytes(bytes: number): string {
@@ -42,14 +44,17 @@ export default function Home() {
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
+  const [synthesizing, setSynthesizing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<UploadResponse | null>(null);
   const [analysisResult, setAnalysisResult] = useState<AnonymizeResponse | null>(null);
+  const [synthResult, setSynthResult] = useState<SyntheticResponse | null>(null);
 
   function selectFile(selected: File | null) {
     setError(null);
     setResult(null);
     setAnalysisResult(null);
+    setSynthResult(null);
     if (!selected) return;
     if (!selected.name.toLowerCase().endsWith(".csv")) {
       setFile(null);
@@ -70,6 +75,7 @@ export default function Home() {
     setUploading(true);
     setError(null);
     setAnalysisResult(null);
+    setSynthResult(null);
     try {
       setResult(await uploadCsv(file));
     } catch (err) {
@@ -83,12 +89,29 @@ export default function Home() {
     if (!result || analyzing) return;
     setAnalyzing(true);
     setError(null);
+    setSynthResult(null); // yeni analizde eski sentetik sonucu temizle
     try {
       setAnalysisResult(await anonymizeCsv(result.file_id));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Analiz başarısız oldu.");
     } finally {
       setAnalyzing(false);
+    }
+  }
+
+  async function handleSynthesize() {
+    if (!analysisResult || synthesizing) return;
+    setSynthesizing(true);
+    setError(null);
+    try {
+      // Önemli: sentetik veriyi anonimleştirilmiş dosyadan üretiyoruz
+      // (anonymized_file_id), ham/orijinal veriyi modele hiç vermiyoruz.
+      // Böylece üretilen sahte veri gerçek kişisel bilgiye dayanmıyor.
+      setSynthResult(await synthesizeCsv(analysisResult.anonymized_file_id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Sentetik veri üretilemedi.");
+    } finally {
+      setSynthesizing(false);
     }
   }
 
@@ -376,6 +399,78 @@ export default function Home() {
                 </tbody>
               </table>
             </div>
+          </div>
+
+          {/* ── Sentetik Veri Üretimi (SCRUM-32) ── */}
+          <div className="rounded-2xl border border-emerald-950/70 bg-[#0e1613] p-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">🧪 Sentetik Veri Üretimi</h3>
+              <button
+                onClick={handleSynthesize}
+                disabled={synthesizing}
+                className="rounded-full bg-emerald-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {synthesizing
+                  ? "Üretiliyor..."
+                  : synthResult
+                  ? "Yeniden Üret"
+                  : "Sentetik Veri Üret"}
+              </button>
+            </div>
+            <p className="mt-2 text-sm text-neutral-500">
+              Anonimleştirilmiş veriye istatistiksel olarak benzeyen, ama gerçek
+              olmayan yapay bir veri seti üretir.
+            </p>
+
+            {synthResult && (
+              <div className="mt-6 space-y-4">
+                {/* küçük üretim özeti: hangi yöntem, kaç satır/kolon */}
+                <div className="flex flex-wrap items-center gap-3 text-sm">
+                  <span className="rounded-full border border-emerald-500/40 px-3 py-0.5 text-emerald-400">
+                    Yöntem:{" "}
+                    {synthResult.method_used === "ctgan" ? "CTGAN (SDV)" : "Faker"}
+                  </span>
+                  <span className="text-neutral-400">
+                    {synthResult.num_rows.toLocaleString("en-US")} satır ·{" "}
+                    {synthResult.num_columns} kolon
+                  </span>
+                </div>
+
+                {/* CTGAN patlayıp Faker'a düştüyse kullanıcıya sebebini gösteriyoruz */}
+                {synthResult.ctgan_fallback_reason && (
+                  <p className="rounded-lg border border-amber-900/50 bg-amber-950/30 px-4 py-2 text-xs text-amber-300">
+                    CTGAN kullanılamadı, Faker yöntemine geçildi. Sebep:{" "}
+                    {synthResult.ctgan_fallback_reason}
+                  </p>
+                )}
+
+                {/* asıl iş: sentetik veri önizleme tablosu (ilk 5 satır) */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-neutral-800 text-neutral-500">
+                        {Object.keys(synthResult.preview[0] ?? {}).map((col) => (
+                          <th key={col} className="px-3 py-2 font-medium">
+                            {col}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {synthResult.preview.map((row, i) => (
+                        <tr key={i} className="border-b border-neutral-900">
+                          {Object.entries(row).map(([col, val]) => (
+                            <td key={col} className="px-3 py-2 whitespace-nowrap">
+                              {val === null ? "—" : String(val)}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
         </section>
       )}

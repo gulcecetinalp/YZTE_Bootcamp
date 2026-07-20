@@ -1,40 +1,33 @@
-import io
 import uuid
 
-import pandas as pd
-from fastapi import APIRouter, HTTPException, UploadFile
+from fastapi import APIRouter, UploadFile
 
+from app.services import validation
 from app.storage import UPLOAD_DIR, csv_path
 
 router = APIRouter(prefix="/api", tags=["upload"])
 
-MAX_FILE_SIZE = 20 * 1024 * 1024  # 20 MB
 PREVIEW_ROWS = 5
 
 
 @router.post("/upload")
 async def upload_csv(file: UploadFile):
-    if not file.filename or not file.filename.lower().endswith(".csv"):
-        raise HTTPException(status_code=400, detail="Sadece .csv uzantılı dosyalar yüklenebilir.")
+    # Validasyon adımlarını services/validation.py'ye taşıdık, burası artık
+    # sadece "geçerliyse kaydet ve özet dön" işini yapıyor.
+    validation.check_extension(file.filename)              # 1) uzantı .csv mi
+    contents = await validation.read_within_limit(file)    # 2) boyut sınırını aşmadan oku
+    df = validation.parse_csv(contents)                    # 3) pandas okuyabiliyor mu
+    validation.validate_dataframe(df)                      # 4) boş/kolonsuz mu
 
-    contents = await file.read()
-
-    if len(contents) > MAX_FILE_SIZE:
-        raise HTTPException(status_code=413, detail="Dosya boyutu 20 MB sınırını aşıyor.")
-
-    try:
-        df = pd.read_csv(io.BytesIO(contents))
-    except Exception:
-        raise HTTPException(status_code=400, detail="Dosya geçerli bir CSV olarak okunamadı.")
-
-    if df.empty or df.columns.empty:
-        raise HTTPException(status_code=400, detail="CSV dosyası boş, işlenecek veri bulunamadı.")
-
+    # buraya geldiysek dosya sağlam, diske yazıyoruz
     file_id = str(uuid.uuid4())
     UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
     csv_path(file_id).write_bytes(contents)
 
-    preview = df.head(PREVIEW_ROWS).where(df.head(PREVIEW_ROWS).notna(), None)
+    # ilk 5 satır önizleme. NaN'ları None'a çeviriyoruz yoksa JSON'da NaN
+    # geçersiz oluyor ve frontend hata veriyor.
+    head = df.head(PREVIEW_ROWS)
+    preview = head.where(head.notna(), None)
 
     return {
         "file_id": file_id,

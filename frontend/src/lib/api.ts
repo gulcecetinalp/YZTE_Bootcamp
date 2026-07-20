@@ -73,6 +73,43 @@ export async function uploadCsv(file: File): Promise<UploadResponse> {
   return res.json();
 }
 
+export interface SyntheticResponse {
+  file_id: string;
+  synthetic_file_id: string;
+  method_used: string;
+  // CTGAN patlayıp Faker'a düştüyse sebebi burada gelir, yoksa null
+  ctgan_fallback_reason: string | null;
+  num_rows: number;
+  num_columns: number;
+  // stats'in içeriği yönteme göre değiştiği için burada tam tiplemiyoruz
+  stats: Record<string, unknown>;
+  preview: Record<string, string | number | boolean | null>[];
+}
+
+export async function synthesizeCsv(
+  fileId: string,
+  method: "auto" | "ctgan" | "faker" = "auto",
+): Promise<SyntheticResponse> {
+  // method'u query string olarak gönderiyoruz. auto = önce CTGAN, olmazsa Faker.
+  const res = await fetch(
+    `${getApiUrl()}/api/synthetic/${fileId}?method=${method}`,
+    { method: "POST" },
+  );
+
+  if (!res.ok) {
+    let detail = `Sentetik veri üretimi başarısız (HTTP ${res.status})`;
+    try {
+      const body = await res.json();
+      if (typeof body?.detail === "string") detail = body.detail;
+    } catch {
+      // gövde JSON değilse genel mesajı kullan
+    }
+    throw new Error(detail);
+  }
+
+  return res.json();
+}
+
 export async function anonymizeCsv(fileId: string): Promise<AnonymizeResponse> {
   const res = await fetch(`${getApiUrl()}/api/anonymize/${fileId}`, {
     method: "POST",
