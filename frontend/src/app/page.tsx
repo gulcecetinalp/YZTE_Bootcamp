@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useId, useState } from "react";
 import {
   uploadCsv,
   anonymizeCsv,
@@ -37,7 +37,7 @@ const SENSITIVITY_COLOR: Record<string, string> = {
 };
 
 export default function Home() {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputId = useId();
   const [file, setFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -59,7 +59,7 @@ export default function Home() {
     setFile(selected);
   }
 
-  function handleDrop(e: React.DragEvent<HTMLDivElement>) {
+  function handleDrop(e: React.DragEvent<HTMLLabelElement>) {
     e.preventDefault();
     setDragActive(false);
     selectFile(e.dataTransfer.files?.[0] ?? null);
@@ -102,18 +102,18 @@ export default function Home() {
       </section>
 
       <section className="rounded-2xl border border-emerald-950/70 bg-[#0e1613] p-6">
-        <div
+        <label
+          htmlFor={inputId}
           onDragOver={(e) => {
             e.preventDefault();
             setDragActive(true);
           }}
           onDragLeave={() => setDragActive(false)}
           onDrop={handleDrop}
-          onClick={() => inputRef.current?.click()}
           className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-12 text-center transition-colors ${
             dragActive
               ? "border-emerald-400 bg-emerald-500/10"
-              : "border-neutral-700 hover:border-emerald-600"
+              : "border-neutral-700 hover:border-emerald-600 focus-within:border-emerald-500"
           }`}
         >
           <span className="text-3xl">📄</span>
@@ -124,13 +124,16 @@ export default function Home() {
             Only .csv files, up to 20 MB
           </p>
           <input
-            ref={inputRef}
+            id={inputId}
             type="file"
             accept=".csv,text/csv"
-            className="hidden"
+            className="sr-only"
+            onClick={(e) => {
+              e.currentTarget.value = "";
+            }}
             onChange={(e) => selectFile(e.target.files?.[0] ?? null)}
           />
-        </div>
+        </label>
 
         {file && (
           <div className="mt-4 flex items-center justify-between rounded-lg bg-[#131d19] px-4 py-3">
@@ -379,4 +382,3 @@ export default function Home() {
     </div>
   );
 }
-

@@ -1,5 +1,16 @@
-export const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8001";
+const API_PORT = "8001";
+
+function getApiUrl(): string {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+
+  if (typeof window === "undefined") {
+    return `http://localhost:${API_PORT}`;
+  }
+
+  return `${window.location.protocol}//${window.location.hostname}:${API_PORT}`;
+}
 
 export interface ColumnInfo {
   name: string;
@@ -43,7 +54,7 @@ export async function uploadCsv(file: File): Promise<UploadResponse> {
   const formData = new FormData();
   formData.append("file", file);
 
-  const res = await fetch(`${API_URL}/api/upload`, {
+  const res = await fetch(`${getApiUrl()}/api/upload`, {
     method: "POST",
     body: formData,
   });
@@ -63,7 +74,7 @@ export async function uploadCsv(file: File): Promise<UploadResponse> {
 }
 
 export async function anonymizeCsv(fileId: string): Promise<AnonymizeResponse> {
-  const res = await fetch(`${API_URL}/api/anonymize/${fileId}`, {
+  const res = await fetch(`${getApiUrl()}/api/anonymize/${fileId}`, {
     method: "POST",
   });
 
