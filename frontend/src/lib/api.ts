@@ -73,6 +73,27 @@ export async function uploadCsv(file: File): Promise<UploadResponse> {
   return res.json();
 }
 
+// backend synthetic_faker._compute_stats bize kolon bazlı böyle bir özet dönüyor
+export interface NumericStat {
+  mean: number;
+  std: number;
+  min: number;
+  max: number;
+}
+
+export interface CategoricalStat {
+  unique: number;
+  top: string | null;
+  top_freq: number | null;
+}
+
+export interface ColumnStat {
+  dtype: string;
+  // sayısal kolonda NumericStat, metin kolonunda CategoricalStat geliyor
+  original?: NumericStat | CategoricalStat;
+  synthetic?: NumericStat | CategoricalStat;
+}
+
 export interface SyntheticResponse {
   file_id: string;
   synthetic_file_id: string;
@@ -81,8 +102,8 @@ export interface SyntheticResponse {
   ctgan_fallback_reason: string | null;
   num_rows: number;
   num_columns: number;
-  // stats'in içeriği yönteme göre değiştiği için burada tam tiplemiyoruz
-  stats: Record<string, unknown>;
+  // kolon adı -> istatistik özeti (orijinal vs sentetik karşılaştırması)
+  stats: Record<string, ColumnStat>;
   preview: Record<string, string | number | boolean | null>[];
 }
 

@@ -8,12 +8,19 @@ import {
   type UploadResponse,
   type AnonymizeResponse,
   type SyntheticResponse,
+  type NumericStat,
 } from "@/lib/api";
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+// mini bar chart için: değeri, verilen maksimuma göre yüzde genişliğe çeviriyoruz
+function barWidth(value: number, max: number): string {
+  if (!max || max <= 0) return "0%";
+  return `${Math.min(100, (value / max) * 100)}%`;
 }
 
 const SENSITIVITY_LABEL: Record<string, string> = {
@@ -468,6 +475,94 @@ export default function Home() {
                       ))}
                     </tbody>
                   </table>
+                </div>
+
+                {/* Task 3 (SCRUM-23): orijinal ↔ sentetik karşılaştırma "grafikleri".
+                    Ekstra kütüphane eklemedik, basit CSS bar'larıyla gösteriyoruz.
+                    Amaç: üretilen sentetik veri gerçek veriye ne kadar benziyor,
+                    ortalamalara bakarak gözle görülsün. */}
+                <div className="pt-2">
+                  <h4 className="mb-3 text-sm font-semibold text-neutral-300">
+                    📊 Orijinal ↔ Sentetik Karşılaştırması
+                  </h4>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {Object.entries(synthResult.stats).map(([col, s]) => {
+                      const orig = s.original;
+                      const syn = s.synthetic;
+                      // sayısal kolonda mean var, kategorikte yok -> ona göre çiziyoruz
+                      const isNumeric =
+                        !!orig && !!syn && "mean" in orig && "mean" in syn;
+                      return (
+                        <div
+                          key={col}
+                          className="rounded-lg border border-neutral-800 bg-[#0b120f] p-3"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-mono text-xs text-emerald-300">
+                              {col}
+                            </span>
+                            <span className="text-[10px] text-neutral-600">
+                              {s.dtype}
+                            </span>
+                          </div>
+
+                          {isNumeric ? (
+                            (() => {
+                              const oMean = (orig as NumericStat).mean;
+                              const sMean = (syn as NumericStat).mean;
+                              // iki bar'ı aynı ölçeğe oturtmak için ikisinin
+                              // büyük olanını referans alıyoruz (en az 1)
+                              const scale = Math.max(
+                                Math.abs(oMean),
+                                Math.abs(sMean),
+                                1,
+                              );
+                              return (
+                                <div className="mt-2 space-y-2">
+                                  <div>
+                                    <div className="flex justify-between text-[11px] text-neutral-500">
+                                      <span>Orijinal ort.</span>
+                                      <span>{oMean}</span>
+                                    </div>
+                                    <div className="mt-1 h-2 rounded bg-neutral-800">
+                                      <div
+                                        className="h-2 rounded bg-emerald-500"
+                                        style={{ width: barWidth(Math.abs(oMean), scale) }}
+                                      />
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <div className="flex justify-between text-[11px] text-neutral-500">
+                                      <span>Sentetik ort.</span>
+                                      <span>{sMean}</span>
+                                    </div>
+                                    <div className="mt-1 h-2 rounded bg-neutral-800">
+                                      <div
+                                        className="h-2 rounded bg-sky-500"
+                                        style={{ width: barWidth(Math.abs(sMean), scale) }}
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })()
+                          ) : (
+                            // kategorik kolon: benzersiz değer sayılarını kıyaslıyoruz
+                            <div className="mt-2 text-[11px] text-neutral-500">
+                              <p>
+                                Benzersiz (orijinal):{" "}
+                                {orig && "unique" in orig ? orig.unique : "—"}
+                              </p>
+                              <p>
+                                Benzersiz (sentetik):{" "}
+                                {syn && "unique" in syn ? syn.unique : "—"}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             )}
