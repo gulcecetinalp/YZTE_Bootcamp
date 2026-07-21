@@ -23,6 +23,14 @@ function barWidth(value: number, max: number): string {
   return `${Math.min(100, (value / max) * 100)}%`;
 }
 
+// backend grafik anahtarını (correlation / dist__X / count__X) okunur başlığa çevirir
+function chartTitle(key: string): string {
+  if (key === "correlation") return "Korelasyon Karşılaştırması";
+  if (key.startsWith("dist__")) return `${key.slice(6)} dağılımı`;
+  if (key.startsWith("count__")) return `${key.slice(7)} frekansı`;
+  return key;
+}
+
 const SENSITIVITY_LABEL: Record<string, string> = {
   direct: "Doğrudan Tanımlayıcı",
   quasi: "Dolaylı Tanımlayıcı",
@@ -543,6 +551,14 @@ export default function Home() {
                                       />
                                     </div>
                                   </div>
+                                  {typeof s.similarity === "number" && (
+                                    <p className="pt-1 text-[11px] text-neutral-500">
+                                      Ortalama benzerliği:{" "}
+                                      <span className="text-emerald-300">
+                                        {(s.similarity * 100).toFixed(0)}%
+                                      </span>
+                                    </p>
+                                  )}
                                 </div>
                               );
                             })()
@@ -564,6 +580,36 @@ export default function Home() {
                     })}
                   </div>
                 </div>
+
+                {/* Task 2: backend'de matplotlib/seaborn ile üretilen karşılaştırma
+                    grafikleri (korelasyon matrisi, dağılım, frekans). base64 PNG. */}
+                {synthResult.charts &&
+                  Object.keys(synthResult.charts).length > 0 && (
+                    <div className="pt-2">
+                      <h4 className="mb-3 text-sm font-semibold text-neutral-300">
+                        📈 Karşılaştırma Grafikleri
+                      </h4>
+                      <div className="grid gap-4 lg:grid-cols-2">
+                        {Object.entries(synthResult.charts).map(([key, b64]) => (
+                          <figure
+                            key={key}
+                            className="overflow-hidden rounded-lg border border-neutral-800 bg-[#0b120f] p-3"
+                          >
+                            <figcaption className="mb-2 text-xs font-medium text-emerald-300">
+                              {chartTitle(key)}
+                            </figcaption>
+                            {/* base64 data-URI; next/image burada fayda sağlamaz */}
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={`data:image/png;base64,${b64}`}
+                              alt={chartTitle(key)}
+                              className="h-auto w-full rounded"
+                            />
+                          </figure>
+                        ))}
+                      </div>
+                    </div>
+                  )}
               </div>
             )}
           </div>

@@ -31,6 +31,8 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from app.services.comparison import compute_stats
+
 logger = logging.getLogger(__name__)
 
 # Faker isteğe bağlı; yoksa metin kolonları için basit placeholder kullanılır.
@@ -140,36 +142,6 @@ def _sample_text_faker(column_name: str, n: int) -> list[str]:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# İstatistik özeti
-# ──────────────────────────────────────────────────────────────────────────────
-
-def _compute_stats(original: pd.DataFrame, synthetic: pd.DataFrame) -> dict:
-    stats: dict = {}
-    for col in original.columns:
-        col_stats: dict = {"dtype": str(original[col].dtype)}
-        if pd.api.types.is_numeric_dtype(original[col]):
-            for label, df in [("original", original), ("synthetic", synthetic)]:
-                if col in df.columns:
-                    col_stats[label] = {
-                        "mean": round(float(df[col].mean()), 4),
-                        "std": round(float(df[col].std()), 4),
-                        "min": round(float(df[col].min()), 4),
-                        "max": round(float(df[col].max()), 4),
-                    }
-        else:
-            for label, df in [("original", original), ("synthetic", synthetic)]:
-                if col in df.columns:
-                    vc = df[col].astype(str).value_counts(normalize=True)
-                    col_stats[label] = {
-                        "unique": int(df[col].nunique()),
-                        "top": str(vc.index[0]) if not vc.empty else None,
-                        "top_freq": round(float(vc.iloc[0]), 4) if not vc.empty else None,
-                    }
-        stats[col] = col_stats
-    return stats
-
-
-# ──────────────────────────────────────────────────────────────────────────────
 # Ana fonksiyon
 # ──────────────────────────────────────────────────────────────────────────────
 
@@ -232,7 +204,7 @@ def generate_synthetic_faker(
             synthetic_data[col] = _sample_text_faker(col, n)
 
     df_syn = pd.DataFrame(synthetic_data)
-    stats = _compute_stats(df, df_syn)
+    stats = compute_stats(df, df_syn)
     logger.info("Faker sentetik veri üretildi: %d satır", len(df_syn))
     return df_syn, stats
 

@@ -8,3 +8,6 @@ sdv>=1.13
 # SCRUM-17: Faker + istatistiksel kural tabanlı alternatif yöntem
 faker>=25.0
 scipy>=1.13
+# Sprint 3: orijinal ↔ sentetik karşılaştırma grafikleri
+matplotlib>=3.8
+seaborn>=0.13

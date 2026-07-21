@@ -92,6 +92,8 @@ export interface ColumnStat {
   // sayısal kolonda NumericStat, metin kolonunda CategoricalStat geliyor
   original?: NumericStat | CategoricalStat;
   synthetic?: NumericStat | CategoricalStat;
+  // sadece sayısal kolonda gelir
+  similarity?: number | null;
 }
 
 export interface SyntheticResponse {
@@ -104,6 +106,8 @@ export interface SyntheticResponse {
   num_columns: number;
   // kolon adı -> istatistik özeti (orijinal vs sentetik karşılaştırması)
   stats: Record<string, ColumnStat>;
+  // grafik anahtarı -> base64 PNG (correlation, dist__<col>, count__<col>)
+  charts?: Record<string, string>;
   preview: Record<string, string | number | boolean | null>[];
 }
 

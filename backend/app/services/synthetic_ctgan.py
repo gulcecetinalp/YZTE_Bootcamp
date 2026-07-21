@@ -22,6 +22,8 @@ import logging
 
 import pandas as pd
 
+from app.services.comparison import compute_stats
+
 logger = logging.getLogger(__name__)
 
 # CTGAN import'u isteğe bağlı; yoksa ImportError fırlatılır ve
@@ -32,36 +34,6 @@ try:
     _SDV_AVAILABLE = True
 except ImportError:  # pragma: no cover
     _SDV_AVAILABLE = False
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Yardımcı fonksiyonlar
-# ──────────────────────────────────────────────────────────────────────────────
-
-def _compute_stats(original: pd.DataFrame, synthetic: pd.DataFrame) -> dict:
-    """Orijinal ve sentetik veri arasında kolon bazlı istatistik karşılaştırması."""
-    stats: dict = {}
-    for col in original.columns:
-        col_stats: dict = {"dtype": str(original[col].dtype)}
-        if pd.api.types.is_numeric_dtype(original[col]):
-            for label, df in [("original", original), ("synthetic", synthetic)]:
-                col_stats[label] = {
-                    "mean": round(float(df[col].mean()), 4) if col in df.columns else None,
-                    "std": round(float(df[col].std()), 4) if col in df.columns else None,
-                    "min": round(float(df[col].min()), 4) if col in df.columns else None,
-                    "max": round(float(df[col].max()), 4) if col in df.columns else None,
-                }
-        else:
-            for label, df in [("original", original), ("synthetic", synthetic)]:
-                if col in df.columns:
-                    vc = df[col].value_counts(normalize=True)
-                    col_stats[label] = {
-                        "unique": int(df[col].nunique()),
-                        "top": str(vc.index[0]) if not vc.empty else None,
-                        "top_freq": round(float(vc.iloc[0]), 4) if not vc.empty else None,
-                    }
-        stats[col] = col_stats
-    return stats
-
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Ana fonksiyon
@@ -111,7 +83,7 @@ def generate_synthetic_ctgan(
     metadata = SingleTableMetadata()
     metadata.detect_from_dataframe(df)
 
-    synthesizer = CTGANSynthesizer(metadata, epochs=epochs, verbose=False)
+    synthesizer = CTGANSynthesizer(metadata, epochs=epochs, verbose=True)
 
     try:
         synthesizer.fit(df)
@@ -121,6 +93,6 @@ def generate_synthetic_ctgan(
         logger.exception("CTGAN üretimi sırasında hata: %s", exc)
         raise RuntimeError(f"CTGAN üretimi başarısız: {exc}") from exc
 
-    stats = _compute_stats(df, df_syn)
+    stats = compute_stats(df, df_syn)
     logger.info("CTGAN sentetik veri üretildi: %d satır", len(df_syn))
     return df_syn, stats

@@ -13,6 +13,7 @@ from typing import Literal
 import pandas as pd
 from fastapi import APIRouter, HTTPException, Query
 
+from app.services.comparison import build_comparison_charts
 from app.services.synthetic_faker import generate_synthetic_faker
 from app.storage import csv_path
 
@@ -133,6 +134,8 @@ def generate_synthetic(
     preview_df = df_syn.head(PREVIEW_ROWS)
     preview = preview_df.where(preview_df.notna(), None)
 
+    charts = build_comparison_charts(df, df_syn)
+
     return {
         "file_id": file_id,
         "synthetic_file_id": synthetic_file_id,
@@ -141,5 +144,6 @@ def generate_synthetic(
         "num_rows": int(df_syn.shape[0]),
         "num_columns": int(df_syn.shape[1]),
         "stats": stats,
+        "charts": charts,
         "preview": preview.to_dict(orient="records"),
     }
