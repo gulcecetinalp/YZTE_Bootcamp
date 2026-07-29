@@ -11,3 +11,7 @@ scipy>=1.13
 # Sprint 3: orijinal ↔ sentetik karşılaştırma grafikleri
 matplotlib>=3.8
 seaborn>=0.13
+# SCRUM-24: KVKK risk analiz ajanının çok adımlı orkestrasyonu
+langgraph>=1.2
+langchain-google-genai>=2.0
+python-dotenv>=1.0
