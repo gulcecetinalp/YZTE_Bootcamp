@@ -31,6 +31,63 @@ function chartTitle(key: string): string {
   return key;
 }
 
+// Orijinal ve anonimleştirilmiş tabloyu aynı şekilde çizdiğimiz için tek bir
+// tablo bileşeni yazıp iki yerde kullanıyoruz. changedColumns içindeki kolonlar
+// anonimleştirmede değiştirilenler, onları sarı gösterip * koyuyoruz.
+function PreviewTable({
+  rows,
+  changedColumns,
+}: {
+  rows: Record<string, string | number | boolean | null>[];
+  changedColumns: Set<string>;
+}) {
+  const columns = Object.keys(rows[0] ?? {});
+
+  if (columns.length === 0) {
+    return <p className="text-sm text-neutral-500">Gösterilecek veri yok.</p>;
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-left text-sm">
+        <thead>
+          <tr className="border-b border-neutral-800 text-neutral-500">
+            {columns.map((col) => (
+              <th
+                key={col}
+                className={`px-3 py-2 font-medium ${
+                  changedColumns.has(col) ? "text-amber-400" : ""
+                }`}
+              >
+                {col}
+                {changedColumns.has(col) && " *"}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, i) => (
+            <tr key={i} className="border-b border-neutral-900">
+              {columns.map((col) => (
+                <td
+                  key={col}
+                  className={`px-3 py-2 whitespace-nowrap ${
+                    changedColumns.has(col) ? "text-amber-300" : ""
+                  }`}
+                >
+                  {row[col] === null || row[col] === undefined
+                    ? "—"
+                    : String(row[col])}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 const SENSITIVITY_LABEL: Record<string, string> = {
   direct: "Doğrudan Tanımlayıcı",
   quasi: "Dolaylı Tanımlayıcı",
@@ -113,6 +170,14 @@ export default function Home() {
       setAnalyzing(false);
     }
   }
+
+  // Anonimleştirmede gerçekten değiştirilen kolonlar (hash/mask uygulananlar).
+  // Karşılaştırma tablosunda bunları vurgulamak için Set'e çeviriyoruz.
+  const changedColumns = new Set(
+    (analysisResult?.actions ?? [])
+      .filter((a) => a.action !== "kept")
+      .map((a) => a.column),
+  );
 
   async function handleSynthesize() {
     if (!analysisResult || synthesizing) return;
@@ -380,39 +445,45 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Anonimleştirilmiş önizleme */}
+          {/* Task 11 (SCRUM-31): orijinal ve anonimleştirilmiş veriyi alt alta
+              göstererek karşılaştırma. Önceden orijinal tablo sayfanın çok
+              yukarısında kalıyordu, kullanıcı ikisini yan yana göremiyordu. */}
           <div className="rounded-2xl border border-emerald-950/70 bg-[#0e1613] p-6">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold">
-                Anonimleştirilmiş Veri Önizlemesi (ilk 5 satır)
+                Orijinal ↔ Anonimleştirilmiş Karşılaştırma (ilk 5 satır)
               </h3>
               <span className="rounded-full border border-emerald-500/40 px-3 py-0.5 text-xs text-emerald-400">
                 ID: {analysisResult.anonymized_file_id.slice(0, 8)}…
               </span>
             </div>
-            <div className="mt-4 overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-neutral-800 text-neutral-500">
-                    {Object.keys(analysisResult.preview[0] ?? {}).map((col) => (
-                      <th key={col} className="px-3 py-2 font-medium">
-                        {col}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {analysisResult.preview.map((row, i) => (
-                    <tr key={i} className="border-b border-neutral-900">
-                      {Object.entries(row).map(([col, val]) => (
-                        <td key={col} className="px-3 py-2 whitespace-nowrap">
-                          {val === null ? "—" : String(val)}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <p className="mt-2 text-sm text-neutral-500">
+              Sarı ile işaretli (*) kolonlar anonimleştirme sırasında
+              değiştirilen kolonlardır.
+            </p>
+
+            <div className="mt-5 space-y-6">
+              <div>
+                <p className="mb-2 text-xs font-medium tracking-wide text-neutral-500 uppercase">
+                  Orijinal veri
+                </p>
+                {result && (
+                  <PreviewTable
+                    rows={result.preview}
+                    changedColumns={changedColumns}
+                  />
+                )}
+              </div>
+
+              <div>
+                <p className="mb-2 text-xs font-medium tracking-wide text-emerald-500 uppercase">
+                  Anonimleştirilmiş veri
+                </p>
+                <PreviewTable
+                  rows={analysisResult.preview}
+                  changedColumns={changedColumns}
+                />
+              </div>
             </div>
           </div>
 
@@ -613,6 +684,17 @@ export default function Home() {
               </div>
             )}
           </div>
+
+          {/* Task 7 (SCRUM-27): hukuki bilgilendirme notu. Analiz çıktısı
+              teknik bir değerlendirme, hukuki görüş değil; bunu kullanıcıya
+              açıkça söylüyoruz. */}
+          <p className="rounded-xl border border-neutral-800 bg-[#0b120f] px-4 py-3 text-xs leading-relaxed text-neutral-400">
+            ⚖️ <strong className="text-neutral-300">Bilgilendirme:</strong> Bu
+            rapor hukuki danışmanlık değildir, teknik risk analizi amacıyla
+            oluşturulmuştur. Kişisel verilerin işlenmesine ilişkin nihai
+            değerlendirme için KVKK mevzuatına ve hukuk danışmanınıza
+            başvurmalısınız.
+          </p>
         </section>
       )}
     </div>
