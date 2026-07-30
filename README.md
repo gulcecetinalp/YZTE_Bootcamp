@@ -235,15 +235,65 @@ Sprint için planlanan 13 taskın tamamı bitirildi ve sonraki sprinte iş devre
 
 ---
 
+# Sprint 3 — Final Teslimat, AI Agent & Kullanıcı Deneyimi
+
+## 📋 Product Backlog & Tamamlanan Story'ler
+
+Sprint 3 kapsamında ürünün son hali tamamlandı, AI Agent KVKK raporlama modülü entegre edildi ve arayüz dinamik hale getirildi:
+- **Story 1 — KVKK Risk Analiz Ajanı Entegrasyonu:** LangChain ve çok adımlı orkestrasyon (Kolon Analizi -> Risk Skorlama -> Teknik Rapor Oluşturma).
+- **Story 2 — Gelişmiş Sentetik Veri & Karşılaştırmalı Grafikler:** CTGAN ve hızlı Faker modelleri ile üretilen verilerin korelasyon ve dağılım grafiklerinin (base64) sunulması.
+- **Story 3 — Kullanıcı Arayüzü & Akıcı Navigasyon:** Smooth-scroll dinamik üst menü, canlı karşılaştırma tabloları, responsive dark theme tasarım.
+
+---
+
+## 🖼️ Proje Ekran Görüntüleri (AegisAI Arayüzü)
+
+### 1. Veri Seti Yükleme Ekranı
+Sürükle-bırak ve dosya gezgini desteği sunan CSV yükleme alanı ve otomatik kolon/satır tespiti:
+
+<img src="gorseller/app-yukleme.png" width="800" alt="AegisAI - Veri Seti Yükleme Ekranı" />
+
+---
+
+### 2. Veri Seti Durumu ve Önizleme
+Yüklenen CSV dosyasının veri yapısı, kolon tipleri ve ilk 5 satırlık canlı önizleme tablosu:
+
+<img src="gorseller/app-analiz.png" width="800" alt="AegisAI - Veri Seti Durumu ve Önizleme" />
+
+---
+
+### 3. Hassas Veri Tespiti ve Anonimleştirme Karşılaştırması
+Doğrudan ve dolaylı tanımlayıcıların tespiti, uygulanan Hash/Maskeleme işlemleri ve Orijinal ↔ Anonimleştirilmiş veri karşılaştırması:
+
+<img src="gorseller/app-anonim.png" width="800" alt="AegisAI - Anonimleştirme ve Karşılaştırma Ekranı" />
+
+---
+
+### 4. Sentetik Veri Üretimi ve İstatistiksel Karşılaştırma
+CTGAN ve Hızlı Faker modelleri ile üretilen yapay verinin orijinal veri ortalamalarıyla kıyaslanması:
+
+<img src="gorseller/app-sentetik.png" width="800" alt="AegisAI - Sentetik Veri ve Ortalama Karşılaştırması" />
+
+---
+
+### 5. Karşılaştırma Grafikleri (Korelasyon & Dağılım)
+Matplotlib ve Seaborn ile dinamik olarak üretilen Korelasyon Matrisi Karşılaştırması ve Değişken Dağılım Grafikleri:
+
+<img src="gorseller/app-grafikler.png" width="800" alt="AegisAI - Korelasyon ve Dağılım Grafikleri" />
+
+---
+
 ## 🛠️ Teknoloji Yığını
 
-- **Frontend:** Next.js, Tailwind CSS
-- **Backend:** Python, FastAPI
-- **Veri Analizi:** pandas, numpy, matplotlib, seaborn
+- **Frontend:** Next.js (App Router), TypeScript, Tailwind CSS
+- **Backend:** Python 3.13, FastAPI, Uvicorn
+- **Veri Analizi & Görselleştirme:** pandas, numpy, matplotlib, seaborn
 - **Hassas Veri Tespiti:** Regex tabanlı içerik taraması, Türkçe/İngilizce kolon adı analizi
-- **Anonimleştirme:** SHA-256 tabanlı hashleme, kategori bazlı veri maskeleme
-- **Sentetik Veri Üretimi:** SDV / CTGAN (birincil), Faker + istatistiksel kural (yedek)
-- **AI Agent (planlanan):** LangChain, LLM entegrasyonu, çok adımlı KVKK Risk Analiz Ajanı
+- **Anonimleştirme:** SHA-256 tabanlı hashleme, kategori bazlı veri maskeleme (Masked / Hashed / Kept)
+- **Sentetik Veri Üretimi:** SDV / CTGAN (Derin Öğrenme), Faker + İstatistiksel Örnekleme (Hızlı Mod)
+- **AI Agent:** LangChain, LLM Entegrasyonu, Çok adımlı KVKK Risk Analiz Ajanı
+
+---
 
 ## 🚀 Kurulum ve Çalıştırma
 
@@ -268,12 +318,12 @@ Bağımlılıkları kurup backend'i çalıştırın:
 
 ```bash
 pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8001
+uvicorn app.main:app --port 8000
 ```
 
-- Backend: http://localhost:8001
-- Swagger API dokümantasyonu: http://localhost:8001/docs
-- Health check: http://localhost:8001/health
+- **Backend:** http://localhost:8000
+- **Swagger API Dokümantasyonu:** http://localhost:8000/docs
+- **Health Check:** http://localhost:8000/health
 
 ### Frontend
 
@@ -285,33 +335,33 @@ npm install
 npm run dev
 ```
 
-Frontend http://localhost:3000 adresinde açılır. Backend farklı bir adreste çalıştırılacaksa `frontend/.env.local` dosyasına aşağıdaki değişken eklenmelidir:
+Frontend http://localhost:3000 adresinde açılır.
 
-```env
-NEXT_PUBLIC_API_URL=http://localhost:8001
-```
+---
 
 ## 📁 Proje Yapısı
 
 ```text
-YZTE_Bootcamp-main/
+YZTE_Bootcamp/
 ├── backend/
 │   ├── app/
-│   │   ├── routers/        # Upload, anonymize, synthetic ve health endpoint'leri
-│   │   ├── services/       # Tespit, anonimleştirme ve sentetik veri servisleri
+│   │   ├── routers/        # Upload, anonymize, synthetic, report ve health endpoint'leri
+│   │   ├── services/       # Tespit, anonimleştirme, CTGAN, Faker ve AI Agent servisleri
 │   │   ├── main.py         # FastAPI uygulaması ve CORS yapılandırması
-│   │   └── storage.py      # Yüklenen ve üretilen CSV dosyalarının yönetimi
-│   ├── scripts/            # Smoke testleri
-│   ├── uploads/            # İşlenen CSV dosyaları
+│   │   └── storage.py      # CSV dosyalarının yerel depolama yönetimi
+│   ├── scripts/            # Otomatik smoke testleri
+│   ├── uploads/            # İşlenen CSV ve rapor dosyaları
 │   └── requirements.txt
 ├── frontend/
-│   ├── src/app/            # Next.js arayüzü
-│   ├── src/lib/api.ts      # Backend API bağlantıları
+│   ├── src/app/            # Next.js arayüzü (layout.tsx, page.tsx, globals.css)
+│   ├── src/lib/api.ts      # Backend API entegrasyonu (Fetch client)
 │   └── package.json
-├── gorseller/              # Sprint ve ürün dokümantasyonu görselleri
-├── yzta_bootcamp.ipynb     # EDA çalışmaları
+├── gorseller/              # Proje ekran görüntüleri, Jira ve Scrum dokümanları
+├── yzta_bootcamp.ipynb     # Keşifsel Veri Analizi (EDA) çalışmaları
 └── README.md
 ```
+
+---
 
 ## 👥 Takım Rolleri
 
@@ -322,3 +372,4 @@ YZTE_Bootcamp-main/
 | Duygu Selin Alkan | Developer |
 | Furkan Altas | Developer |
 | Muhammed Aydın | Developer |
+
