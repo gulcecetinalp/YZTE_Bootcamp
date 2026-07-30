@@ -5,10 +5,12 @@ import {
   uploadCsv,
   anonymizeCsv,
   synthesizeCsv,
+  generateKvkkReport,
   type UploadResponse,
   type AnonymizeResponse,
   type SyntheticResponse,
   type NumericStat,
+  type KvkkReportResponse,
 } from "@/lib/api";
 
 function formatBytes(bytes: number): string {
@@ -110,6 +112,24 @@ const SENSITIVITY_COLOR: Record<string, string> = {
   quasi: "text-yellow-400 bg-yellow-500/10 border-yellow-500/30",
 };
 
+const RISK_LEVEL_LABEL: Record<string, string> = {
+  low: "Düşük Risk",
+  medium: "Orta Risk",
+  high: "Yüksek Risk",
+};
+
+const RISK_LEVEL_COLOR: Record<string, string> = {
+  low: "text-emerald-400 bg-emerald-500/10 border-emerald-500/30",
+  medium: "text-amber-400 bg-amber-500/10 border-amber-500/30",
+  high: "text-red-400 bg-red-500/10 border-red-500/30",
+};
+
+const AGENT_STEP_LABEL: Record<string, string> = {
+  column_analysis: "1. Kolon Analizi",
+  risk_scoring: "2. Risk Skorlama",
+  report_generation: "3. Rapor Yazımı",
+};
+
 export default function Home() {
   const inputId = useId();
   const [file, setFile] = useState<File | null>(null);
@@ -117,16 +137,19 @@ export default function Home() {
   const [uploading, setUploading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [synthesizing, setSynthesizing] = useState(false);
+  const [generatingReport, setGeneratingReport] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<UploadResponse | null>(null);
   const [analysisResult, setAnalysisResult] = useState<AnonymizeResponse | null>(null);
   const [synthResult, setSynthResult] = useState<SyntheticResponse | null>(null);
+  const [kvkkReport, setKvkkReport] = useState<KvkkReportResponse | null>(null);
 
   function selectFile(selected: File | null) {
     setError(null);
     setResult(null);
     setAnalysisResult(null);
     setSynthResult(null);
+    setKvkkReport(null);
     if (!selected) return;
     if (!selected.name.toLowerCase().endsWith(".csv")) {
       setFile(null);
@@ -148,6 +171,7 @@ export default function Home() {
     setError(null);
     setAnalysisResult(null);
     setSynthResult(null);
+    setKvkkReport(null);
     try {
       setResult(await uploadCsv(file));
     } catch (err) {
@@ -162,6 +186,7 @@ export default function Home() {
     setAnalyzing(true);
     setError(null);
     setSynthResult(null); // yeni analizde eski sentetik sonucu temizle
+    setKvkkReport(null); // ve eski KVKK raporunu da
     try {
       setAnalysisResult(await anonymizeCsv(result.file_id));
     } catch (err) {
@@ -192,6 +217,22 @@ export default function Home() {
       setError(err instanceof Error ? err.message : "Sentetik veri üretilemedi.");
     } finally {
       setSynthesizing(false);
+    }
+  }
+
+  async function handleGenerateReport() {
+    if (!result || generatingReport) return;
+    setGeneratingReport(true);
+    setError(null);
+    try {
+      // Not: burada orijinal file_id gönderiliyor, anonymized_file_id değil.
+      // Backend rapor için tespit+anonimleştirmeyi kendi içinde tekrar
+      // çalıştırıyor (bkz. api.ts'teki not).
+      setKvkkReport(await generateKvkkReport(result.file_id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "KVKK raporu üretilemedi.");
+    } finally {
+      setGeneratingReport(false);
     }
   }
 
@@ -685,16 +726,150 @@ export default function Home() {
             )}
           </div>
 
-          {/* Task 7 (SCRUM-27): hukuki bilgilendirme notu. Analiz çıktısı
-              teknik bir değerlendirme, hukuki görüş değil; bunu kullanıcıya
-              açıkça söylüyoruz. */}
-          <p className="rounded-xl border border-neutral-800 bg-[#0b120f] px-4 py-3 text-xs leading-relaxed text-neutral-400">
-            ⚖️ <strong className="text-neutral-300">Bilgilendirme:</strong> Bu
-            rapor hukuki danışmanlık değildir, teknik risk analizi amacıyla
-            oluşturulmuştur. Kişisel verilerin işlenmesine ilişkin nihai
-            değerlendirme için KVKK mevzuatına ve hukuk danışmanınıza
-            başvurmalısınız.
-          </p>
+          {/* ── KVKK Risk Raporu (SCRUM-25/26) ── */}
+          <div className="rounded-2xl border border-emerald-950/70 bg-[#0e1613] p-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">🤖 KVKK Risk Raporu</h3>
+              <button
+                onClick={handleGenerateReport}
+                disabled={generatingReport}
+                className="rounded-full bg-emerald-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {generatingReport
+                  ? "Ajan çalışıyor..."
+                  : kvkkReport
+                  ? "Yeniden Oluştur"
+                  : "Rapor Oluştur"}
+              </button>
+            </div>
+            <p className="mt-2 text-sm text-neutral-500">
+              Çok adımlı bir ajan; önce kolonları analiz eder, sonra
+              deterministik risk skoru hesaplar, en son bulguları LLM ile
+              yorumlayıp teknik bir rapora dönüştürür.
+            </p>
+
+            {kvkkReport && (
+              <div className="mt-6 space-y-5">
+                {/* Ajanın 3 adımı - orkestrasyonun görünür kanıtı */}
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {kvkkReport.agent_steps.map((step) => (
+                    <div
+                      key={step.step}
+                      className="rounded-lg border border-neutral-800 bg-[#0b120f] p-3"
+                    >
+                      <p className="text-xs font-semibold text-emerald-300">
+                        {AGENT_STEP_LABEL[step.step] ?? step.step}
+                      </p>
+                      <p className="mt-1 text-[11px] text-neutral-500">
+                        {step.summary}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Genel risk skoru */}
+                <div className="flex items-center gap-4 rounded-lg border border-neutral-800 bg-[#0b120f] p-4">
+                  <span className="text-3xl font-bold">
+                    {kvkkReport.overall_risk_score}
+                    <span className="text-base text-neutral-500">/100</span>
+                  </span>
+                  <span
+                    className={`rounded-full border px-3 py-1 text-xs font-medium ${
+                      RISK_LEVEL_COLOR[kvkkReport.risk_level] ?? ""
+                    }`}
+                  >
+                    {RISK_LEVEL_LABEL[kvkkReport.risk_level] ?? kvkkReport.risk_level}
+                  </span>
+                </div>
+
+                {/* Kolon bazlı risk değerlendirmesi */}
+                <div>
+                  <h4 className="mb-2 text-sm font-semibold text-neutral-300">
+                    Kolon Bazlı Değerlendirme
+                  </h4>
+                  <div className="space-y-2">
+                    {kvkkReport.column_assessments.map((c) => (
+                      <div
+                        key={c.column}
+                        className="rounded-lg border border-neutral-800 bg-[#0b120f] p-3"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-mono text-xs text-emerald-300">
+                            {c.column}
+                          </span>
+                          <span className="text-xs text-neutral-500">
+                            risk: {c.risk_score}/100
+                          </span>
+                        </div>
+                        <p className="mt-1 text-xs text-neutral-400">
+                          {c.reasoning}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Kombinasyon riskleri */}
+                {kvkkReport.combination_risks.length > 0 && (
+                  <div>
+                    <h4 className="mb-2 text-sm font-semibold text-neutral-300">
+                      Kombinasyon Riskleri
+                    </h4>
+                    <div className="space-y-2">
+                      {kvkkReport.combination_risks.map((cr) => (
+                        <div
+                          key={cr.columns.join("-")}
+                          className="rounded-lg border border-amber-900/40 bg-amber-950/20 p-3"
+                        >
+                          <p className="text-xs font-medium text-amber-300">
+                            {cr.columns.join(" + ")} — {cr.risk}
+                          </p>
+                          <p className="mt-1 text-xs text-neutral-400">
+                            {cr.reasoning}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Veri kalitesi notları (KVKK riskiyle karıştırılmamalı) */}
+                {kvkkReport.data_quality_notes.length > 0 && (
+                  <div>
+                    <h4 className="mb-2 text-sm font-semibold text-neutral-300">
+                      Veri Kalitesi Notları
+                    </h4>
+                    <ul className="list-disc space-y-1 pl-5 text-xs text-neutral-400">
+                      {kvkkReport.data_quality_notes.map((note, i) => (
+                        <li key={i}>{note}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Öneriler */}
+                {kvkkReport.recommendations.length > 0 && (
+                  <div>
+                    <h4 className="mb-2 text-sm font-semibold text-neutral-300">
+                      Öneriler
+                    </h4>
+                    <ul className="list-disc space-y-1 pl-5 text-xs text-neutral-400">
+                      {kvkkReport.recommendations.map((rec, i) => (
+                        <li key={i}>{rec}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Task 7 (SCRUM-27): hukuki bilgilendirme notu - rapor kartına
+                    taşındı, artık ajanın ürettiği gerçek rapor metninden geliyor. */}
+                <p className="rounded-xl border border-neutral-800 bg-[#0b120f] px-4 py-3 text-xs leading-relaxed text-neutral-400">
+                  ⚖️ <strong className="text-neutral-300">Bilgilendirme:</strong>{" "}
+                  {kvkkReport.legal_notice}
+                </p>
+              </div>
+            )}
+          </div>
         </section>
       )}
     </div>

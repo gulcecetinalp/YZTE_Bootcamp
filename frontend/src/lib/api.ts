@@ -135,6 +135,61 @@ export async function synthesizeCsv(
   return res.json();
 }
 
+// backend kvkk_agent.py'nin döndürdüğü şema ile birebir eşleşiyor
+export interface AgentStep {
+  step: string;
+  summary: string;
+}
+
+export interface ColumnAssessment {
+  column: string;
+  category: string;
+  sensitivity: "direct" | "quasi";
+  applied_action: string;
+  risk_score: number;
+  reasoning: string;
+}
+
+export interface CombinationRisk {
+  columns: string[];
+  risk: string;
+  reasoning: string;
+}
+
+export interface KvkkReportResponse {
+  file_id: string;
+  overall_risk_score: number;
+  risk_level: "low" | "medium" | "high";
+  column_assessments: ColumnAssessment[];
+  combination_risks: CombinationRisk[];
+  data_quality_notes: string[];
+  recommendations: string[];
+  agent_steps: AgentStep[];
+  legal_notice: string;
+}
+
+export async function generateKvkkReport(fileId: string): Promise<KvkkReportResponse> {
+  // Not: burada orijinal upload file_id'si gönderiliyor (anonymized_file_id
+  // değil) - backend rapor için tespit+anonimleştirmeyi kendi içinde tekrar
+  // çalıştırıyor, çünkü bu ara sonuçlar hiçbir yerde saklanmıyor.
+  const res = await fetch(`${getApiUrl()}/api/kvkk-report/${fileId}`, {
+    method: "POST",
+  });
+
+  if (!res.ok) {
+    let detail = `KVKK raporu üretilemedi (HTTP ${res.status})`;
+    try {
+      const body = await res.json();
+      if (typeof body?.detail === "string") detail = body.detail;
+    } catch {
+      // gövde JSON değilse genel mesajı kullan
+    }
+    throw new Error(detail);
+  }
+
+  return res.json();
+}
+
 export async function anonymizeCsv(fileId: string): Promise<AnonymizeResponse> {
   const res = await fetch(`${getApiUrl()}/api/anonymize/${fileId}`, {
     method: "POST",
