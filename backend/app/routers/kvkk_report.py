@@ -16,9 +16,9 @@ sonuçla birebir aynı çıktıyı verir.
 import logging
 import os
 
-import pandas as pd
 from fastapi import APIRouter, HTTPException
 
+from app.services import csv_io
 from app.services.anonymization import anonymize_dataframe
 from app.services.detection import detect_sensitive_columns
 from app.services.kvkk_agent import NarrativeLLM, run_kvkk_agent
@@ -70,7 +70,7 @@ def generate_kvkk_report(file_id: str):
         )
 
     try:
-        df = pd.read_csv(source)
+        df = csv_io.read_csv(source)
     except Exception:
         raise HTTPException(
             status_code=400,

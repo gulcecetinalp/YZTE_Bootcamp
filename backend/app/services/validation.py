@@ -14,6 +14,8 @@ import io
 import pandas as pd
 from fastapi import HTTPException, UploadFile
 
+from app.services import csv_io
+
 # Kabul ettiğimiz en büyük dosya. Frontend'de de "up to 20 MB" yazıyor,
 # ikisi aynı kalsın diye buraya sabit koyduk.
 MAX_FILE_SIZE = 20 * 1024 * 1024  # 20 MB
@@ -60,7 +62,8 @@ async def read_within_limit(file: UploadFile) -> bytes:
 def parse_csv(contents: bytes) -> pd.DataFrame:
     """Byte'ları pandas DataFrame'e çevirir, olmazsa anlaşılır hata döner."""
     try:
-        return pd.read_csv(io.BytesIO(contents))
+        # csv_io.read_csv: baştaki sıfırları koruyan okuma (telefon, posta kodu)
+        return csv_io.read_csv(io.BytesIO(contents))
     except pd.errors.EmptyDataError:
         # dosya tamamen boş (tek satır bile yok)
         raise HTTPException(

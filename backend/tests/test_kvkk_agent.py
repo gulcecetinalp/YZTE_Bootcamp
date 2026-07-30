@@ -111,6 +111,50 @@ def test_no_fabricated_risk_when_no_detections():
     assert any("regex" in rec or "sınırlı" in rec for rec in report["recommendations"])
 
 
+def test_korunmus_kolon_eklemek_genel_skoru_dusurmez():
+    """Regresyon testi: eskiden ortalama alındığı için, iyi korunmuş kolonlar
+    eklendikçe açıkta duran bir alanın riski gizleniyordu. Düz metin bir
+    parola tek başına 90 puan alırken 10 hash'li kolon yanına konduğunda 15
+    puana iniyordu. Kolon eklemek skoru DÜŞÜREMEZ.
+    """
+    df = pd.DataFrame({"x": [1, 2, 3]})
+
+    parola_dets = [{"column": "password", "category": "credential", "sensitivity": "direct", "detected_by": "column_name", "match_ratio": None}]
+    parola_acts = [{"column": "password", "category": "credential", "action": "kept"}]
+
+    tek_basina = score_risks(analyze_columns(parola_dets, parola_acts, df))
+
+    # aynı parola + 10 tane iyi korunmuş (hash'lenmiş) kolon
+    genis_dets = parola_dets + [
+        {"column": f"id{i}", "category": "id", "sensitivity": "direct", "detected_by": "column_name", "match_ratio": None}
+        for i in range(10)
+    ]
+    genis_acts = parola_acts + [
+        {"column": f"id{i}", "category": "id", "action": "hashed"} for i in range(10)
+    ]
+    kalabalik = score_risks(analyze_columns(genis_dets, genis_acts, df))
+
+    assert kalabalik["overall_risk_score"] >= tek_basina["overall_risk_score"]
+    assert kalabalik["risk_level"] == "high"
+
+
+def test_genel_skor_en_riskli_kolondan_dusuk_olamaz():
+    df = pd.DataFrame({"x": [1]})
+    detections = [
+        {"column": "tc", "category": "national_id", "sensitivity": "direct", "detected_by": "column_name", "match_ratio": None},
+        {"column": "cinsiyet", "category": "gender", "sensitivity": "quasi", "detected_by": "column_name", "match_ratio": None},
+    ]
+    actions = [
+        {"column": "tc", "category": "national_id", "action": "kept"},
+        {"column": "cinsiyet", "category": "gender", "action": "kept"},
+    ]
+
+    scoring = score_risks(analyze_columns(detections, actions, df))
+    en_yuksek_kolon = max(c["risk_score"] for c in scoring["columns"])
+
+    assert scoring["overall_risk_score"] >= en_yuksek_kolon
+
+
 # ── LLM / fallback davranışı ─────────────────────────────────────────────────
 
 

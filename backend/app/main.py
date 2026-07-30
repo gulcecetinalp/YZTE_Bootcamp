@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 # hep kural tabanlı (LLM'siz) moda düşüyordu.
 load_dotenv()
 
-from app.routers import anonymize, health, kvkk_report, synthetic, upload
+from app.routers import anonymize, download, health, kvkk_report, synthetic, upload
 
 # Local geliştirmede frontend hep bu adreslerde açılıyor. Deploy edince
 # domain değişeceği için origin'leri koda gömmek yerine env'den okuyoruz.
@@ -62,3 +62,4 @@ app.include_router(upload.router)
 app.include_router(anonymize.router)
 app.include_router(synthetic.router)
 app.include_router(kvkk_report.router)
+app.include_router(download.router)

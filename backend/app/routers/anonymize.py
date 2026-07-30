@@ -1,8 +1,8 @@
 import uuid
 
-import pandas as pd
 from fastapi import APIRouter, HTTPException
 
+from app.services import csv_io
 from app.services.anonymization import anonymize_dataframe
 from app.services.detection import detect_sensitive_columns
 from app.storage import csv_path
@@ -24,7 +24,7 @@ def anonymize_file(file_id: str):
         raise HTTPException(status_code=404, detail="Bu file_id ile yüklenmiş bir dosya bulunamadı.")
 
     try:
-        df = pd.read_csv(source)
+        df = csv_io.read_csv(source)
     except Exception:
         raise HTTPException(status_code=400, detail="Kayıtlı dosya geçerli bir CSV olarak okunamadı.")
 

@@ -53,10 +53,9 @@ except ImportError:  # pragma: no cover
     _SCIPY_AVAILABLE = False
 
 
-# ──────────────────────────────────────────────────────────────────────────────
+# 
 # Kolon tipi tespiti (yardımcılar)
-# ──────────────────────────────────────────────────────────────────────────────
-
+# 
 _COLUMN_FAKER_MAP: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"name|isim|ad\b", re.I), "name"),
     (re.compile(r"surname|soyad", re.I), "last_name"),
@@ -80,10 +79,9 @@ def _faker_method(column_name: str) -> str | None:
     return None
 
 
-# ──────────────────────────────────────────────────────────────────────────────
+# 
 # Örnekleme fonksiyonları
-# ──────────────────────────────────────────────────────────────────────────────
-
+# 
 def _sample_numeric(series: pd.Series, n: int) -> np.ndarray:
     """Truncated normal dağılım ile sayısal örnekleme."""
     col_min = float(series.min())
@@ -141,10 +139,9 @@ def _sample_text_faker(column_name: str, n: int) -> list[str]:
     return [str(_faker.word()) for _ in range(n)]
 
 
-# ──────────────────────────────────────────────────────────────────────────────
+# 
 # Ana fonksiyon
-# ──────────────────────────────────────────────────────────────────────────────
-
+# 
 def generate_synthetic_faker(
     df: pd.DataFrame,
     num_rows: int = 0,

@@ -22,12 +22,20 @@ export default function RootLayout({
   return (
     // suppressHydrationWarning: tarayıcı eklentileri (ör. Trancy) <html>'e
     // attribute enjekte edip sahte hydration uyarısı üretiyor
-    <html lang="en" suppressHydrationWarning>
+    <html lang="tr" suppressHydrationWarning>
       <body className="min-h-screen antialiased">
         <header className="border-b border-emerald-950/60 bg-[#070d0b]">
           <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
             <div className="flex items-center gap-2">
-              <span className="text-xl text-emerald-400">🛡</span>
+              {/* Aegis = kalkan; logoyu emoji yerine sade bir SVG ile veriyoruz */}
+              <svg
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                aria-hidden="true"
+                className="h-5 w-5 text-emerald-400"
+              >
+                <path d="M12 2 4 5v6.5c0 4.6 3.2 8.9 8 10.5 4.8-1.6 8-5.9 8-10.5V5l-8-3Z" />
+              </svg>
               <span className="text-lg font-semibold">
                 Aegis<span className="text-emerald-400">AI</span>
               </span>

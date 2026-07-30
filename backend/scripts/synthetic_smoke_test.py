@@ -17,10 +17,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import pandas as pd
 import numpy as np
 
-# ──────────────────────────────────────────────────────────────────────────────
+# 
 # Test verisi — Bank Customer Churn benzeri yapay veri (SDV/Faker testleri için)
-# ──────────────────────────────────────────────────────────────────────────────
-
+# 
 np.random.seed(42)
 N = 200
 
@@ -44,16 +43,16 @@ ERRORS: list[str] = []
 
 def check(condition: bool, msg: str) -> None:
     if condition:
-        print(f"  ✅ {msg}")
+        print(f"   {msg}")
     else:
-        print(f"  ❌ {msg}")
+        print(f"   {msg}")
         ERRORS.append(msg)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Test 1 — Faker (SCRUM-17)
 # ══════════════════════════════════════════════════════════════════════════════
-print("\n📊 Test 1 — Faker + istatistiksel kural tabanlı yöntem (SCRUM-17)")
+print("\n Test 1 — Faker + istatistiksel kural tabanlı yöntem (SCRUM-17)")
 print("-" * 60)
 
 from app.services.synthetic_faker import generate_synthetic_faker
@@ -76,12 +75,12 @@ geo_values = set(df_faker["Geography"].unique())
 check(geo_values.issubset({"France", "Germany", "Spain"}), f"Geography değerleri orijinal küme içinde: {geo_values}")
 
 print(f"\n  → İstatistik örneği (CreditScore):")
-print(f"     Orijinal  mean={stats_faker['CreditScore']['original']['mean']} "
+print(f"  Orijinal  mean={stats_faker['CreditScore']['original']['mean']} "
       f"std={stats_faker['CreditScore']['original']['std']}")
-print(f"     Sentetik  mean={stats_faker['CreditScore']['synthetic']['mean']} "
+print(f"  Sentetik  mean={stats_faker['CreditScore']['synthetic']['mean']} "
       f"std={stats_faker['CreditScore']['synthetic']['std']}")
 
-# ──────────────────────────── num_rows=0 (orijinal kadar) ───────────────────
+# num_rows=0 (orijinal kadar)
 print("\n  → num_rows=0 testi (orijinal boyut korunmalı):")
 df_same, _ = generate_synthetic_faker(test_df, num_rows=0)
 check(len(df_same) == len(test_df), f"num_rows=0 → {len(df_same)} satır (beklenen: {len(test_df)})")
@@ -90,15 +89,15 @@ check(len(df_same) == len(test_df), f"num_rows=0 → {len(df_same)} satır (bekl
 # ══════════════════════════════════════════════════════════════════════════════
 # Test 2 — CTGAN (SCRUM-16) — kurulu değilse atlanır
 # ══════════════════════════════════════════════════════════════════════════════
-print("\n📊 Test 2 — CTGAN / SDV yöntemi (SCRUM-16)")
+print("\n Test 2 — CTGAN / SDV yöntemi (SCRUM-16)")
 print("-" * 60)
 
 try:
     from app.services.synthetic_ctgan import generate_synthetic_ctgan, _SDV_AVAILABLE
 
     if not _SDV_AVAILABLE:
-        print("  ⚠️  SDV kurulu değil → CTGAN testi atlanıyor.")
-        print("     Kurmak için: pip install sdv")
+        print("  SDV kurulu değil → CTGAN testi atlanıyor.")
+        print("  Kurmak için: pip install sdv")
     else:
         print("  SDV bulundu, CTGAN testi çalıştırılıyor (küçük veri + az epoch)…")
         df_ctgan, stats_ctgan = generate_synthetic_ctgan(
@@ -111,19 +110,19 @@ try:
         check(not df_ctgan.empty, "CTGAN çıktısı boş değil")
         print(f"\n  → CTGAN istatistik örneği (CreditScore):")
         cs = stats_ctgan.get("CreditScore", {})
-        print(f"     Orijinal  mean={cs.get('original', {}).get('mean')} "
+        print(f"  Orijinal  mean={cs.get('original', {}).get('mean')} "
               f"std={cs.get('original', {}).get('std')}")
-        print(f"     Sentetik  mean={cs.get('synthetic', {}).get('mean')} "
+        print(f"  Sentetik  mean={cs.get('synthetic', {}).get('mean')} "
               f"std={cs.get('synthetic', {}).get('std')}")
 
 except Exception as exc:
-    print(f"  ⚠️  CTGAN testi çalışırken hata oluştu: {exc}")
+    print(f"  CTGAN testi çalışırken hata oluştu: {exc}")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Test 3 — Router mantığı (yüksek seviye)
 # ══════════════════════════════════════════════════════════════════════════════
-print("\n📊 Test 3 — Servis bağımsızlık kontrolü")
+print("\n Test 3 — Servis bağımsızlık kontrolü")
 print("-" * 60)
 
 # İki farklı boyut için tekrar test — deterministik mi?
@@ -140,10 +139,10 @@ check(not df_a.equals(df_c), "Farklı random_state → farklı çıktı")
 # ══════════════════════════════════════════════════════════════════════════════
 print("\n" + "=" * 60)
 if ERRORS:
-    print(f"❌ {len(ERRORS)} test başarısız:")
+    print(f" {len(ERRORS)} test başarısız:")
     for e in ERRORS:
         print(f"   • {e}")
     sys.exit(1)
 else:
-    print("✅ Tüm testler başarıyla tamamlandı!")
+    print(" Tüm testler başarıyla tamamlandı!")
     sys.exit(0)

@@ -6,6 +6,7 @@ import {
   anonymizeCsv,
   synthesizeCsv,
   generateKvkkReport,
+  downloadUrl,
   type UploadResponse,
   type AnonymizeResponse,
   type SyntheticResponse,
@@ -260,7 +261,6 @@ export default function Home() {
               : "border-neutral-700 hover:border-emerald-600 focus-within:border-emerald-500"
           }`}
         >
-          <span className="text-3xl">📄</span>
           <p className="mt-3 font-medium">
             Drag &amp; drop your CSV file here, or click to browse
           </p>
@@ -346,7 +346,7 @@ export default function Home() {
               {analyzing
                 ? "Analiz ediliyor..."
                 : analysisResult
-                ? "✓ Analiz Tamamlandı"
+                ? "Analiz Tamamlandı"
                 : "Analiz Et & Anonimleştir"}
             </button>
           </div>
@@ -394,11 +394,11 @@ export default function Home() {
         </section>
       )}
 
-      {/* ── Analiz Sonuçları Paneli ── */}
+      {/* Analiz Sonuçları Paneli */}
       {analysisResult && (
         <section id="analysis-results" className="space-y-6">
           <h2 className="text-2xl font-bold">
-            🔍 Analiz Sonuçları
+            Analiz Sonuçları
           </h2>
 
           {/* Özet kartlar */}
@@ -494,9 +494,13 @@ export default function Home() {
               <h3 className="text-lg font-semibold">
                 Orijinal ↔ Anonimleştirilmiş Karşılaştırma (ilk 5 satır)
               </h3>
-              <span className="rounded-full border border-emerald-500/40 px-3 py-0.5 text-xs text-emerald-400">
-                ID: {analysisResult.anonymized_file_id.slice(0, 8)}…
-              </span>
+              <a
+                href={downloadUrl(analysisResult.anonymized_file_id, "anonim")}
+                download
+                className="rounded-full border border-emerald-500/40 px-4 py-1.5 text-xs font-medium text-emerald-400 transition-colors hover:bg-emerald-500/10"
+              >
+                Anonim CSV indir
+              </a>
             </div>
             <p className="mt-2 text-sm text-neutral-500">
               Sarı ile işaretli (*) kolonlar anonimleştirme sırasında
@@ -528,10 +532,10 @@ export default function Home() {
             </div>
           </div>
 
-          {/* ── Sentetik Veri Üretimi (SCRUM-32) ── */}
+          {/* Sentetik Veri Üretimi (SCRUM-32) */}
           <div className="rounded-2xl border border-emerald-950/70 bg-[#0e1613] p-6">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">🧪 Sentetik Veri Üretimi</h3>
+              <h3 className="text-lg font-semibold">Sentetik Veri Üretimi</h3>
               <button
                 onClick={handleSynthesize}
                 disabled={synthesizing}
@@ -561,6 +565,13 @@ export default function Home() {
                     {synthResult.num_rows.toLocaleString("en-US")} satır ·{" "}
                     {synthResult.num_columns} kolon
                   </span>
+                  <a
+                    href={downloadUrl(synthResult.synthetic_file_id, "sentetik")}
+                    download
+                    className="rounded-full border border-emerald-500/40 px-4 py-1.5 text-xs font-medium text-emerald-400 transition-colors hover:bg-emerald-500/10"
+                  >
+                    Sentetik CSV indir
+                  </a>
                 </div>
 
                 {/* CTGAN patlayıp Faker'a düştüyse kullanıcıya sebebini gösteriyoruz */}
@@ -603,7 +614,7 @@ export default function Home() {
                     ortalamalara bakarak gözle görülsün. */}
                 <div className="pt-2">
                   <h4 className="mb-3 text-sm font-semibold text-neutral-300">
-                    📊 Orijinal ↔ Sentetik Karşılaştırması
+                    Orijinal ↔ Sentetik Karşılaştırması
                   </h4>
                   <div className="grid gap-3 sm:grid-cols-2">
                     {Object.entries(synthResult.stats).map(([col, s]) => {
@@ -699,7 +710,7 @@ export default function Home() {
                   Object.keys(synthResult.charts).length > 0 && (
                     <div className="pt-2">
                       <h4 className="mb-3 text-sm font-semibold text-neutral-300">
-                        📈 Karşılaştırma Grafikleri
+                        Karşılaştırma Grafikleri
                       </h4>
                       <div className="grid gap-4 lg:grid-cols-2">
                         {Object.entries(synthResult.charts).map(([key, b64]) => (
@@ -726,10 +737,10 @@ export default function Home() {
             )}
           </div>
 
-          {/* ── KVKK Risk Raporu (SCRUM-25/26) ── */}
+          {/* KVKK Risk Raporu (SCRUM-25/26) */}
           <div className="rounded-2xl border border-emerald-950/70 bg-[#0e1613] p-6">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">🤖 KVKK Risk Raporu</h3>
+              <h3 className="text-lg font-semibold">KVKK Risk Raporu</h3>
               <button
                 onClick={handleGenerateReport}
                 disabled={generatingReport}
@@ -864,7 +875,7 @@ export default function Home() {
                 {/* Task 7 (SCRUM-27): hukuki bilgilendirme notu - rapor kartına
                     taşındı, artık ajanın ürettiği gerçek rapor metninden geliyor. */}
                 <p className="rounded-xl border border-neutral-800 bg-[#0b120f] px-4 py-3 text-xs leading-relaxed text-neutral-400">
-                  ⚖️ <strong className="text-neutral-300">Bilgilendirme:</strong>{" "}
+                  <strong className="text-neutral-300">Bilgilendirme:</strong>{" "}
                   {kvkkReport.legal_notice}
                 </p>
               </div>

@@ -35,10 +35,9 @@ try:
 except ImportError:  # pragma: no cover
     _SDV_AVAILABLE = False
 
-# ──────────────────────────────────────────────────────────────────────────────
+# 
 # Ana fonksiyon
-# ──────────────────────────────────────────────────────────────────────────────
-
+# 
 def generate_synthetic_ctgan(
     df: pd.DataFrame,
     num_rows: int = 0,

@@ -73,10 +73,15 @@ _CORR_THRESHOLD = 0.99
 _CAPPING_MIN_UNIQUE = 20
 _CAPPING_MIN_SHARE = 0.02
 
+# Genel skor hesabında kullanılan eşikler. Bir kolonun "gerçekten riskli"
+# sayılması için gereken puan ve birden fazla riskli kolon olmasının getirdiği
+# ek ceza (yaygınlık cezası).
+_RISKY_SCORE_THRESHOLD = 50
+_BREADTH_PENALTY_STEP = 5
+_MAX_BREADTH_PENALTY = 15
 
-# ── Veri sözleşmeleri ────────────────────────────────────────────────────────
 
-
+# Veri sözleşmeleri
 class ColumnAssessment(TypedDict):
     column: str
     category: str
@@ -146,9 +151,7 @@ class KvkkAgentState(TypedDict):
     narrative: ReportNarrative | None
 
 
-# ── Adım 1: kolon analizi (saf Python) ──────────────────────────────────────
-
-
+# Adım 1: kolon analizi (saf Python)
 def _detect_correlated_pairs(
     df: pd.DataFrame, threshold: float = _CORR_THRESHOLD
 ) -> list[tuple[str, str, float]]:
@@ -247,9 +250,7 @@ def analyze_columns(
     }
 
 
-# ── Adım 2: risk skorlama (saf Python) ──────────────────────────────────────
-
-
+# Adım 2: risk skorlama (saf Python)
 def score_risks(column_analysis: ColumnAnalysis) -> RiskScoring:
     """Adım 2: kategori/sensitivity/action ağırlıklarıyla deterministik risk
     skoru üretir. LLM kullanmaz; aynı girdi her zaman aynı skoru verir.
@@ -266,12 +267,27 @@ def score_risks(column_analysis: ColumnAnalysis) -> RiskScoring:
         score = min(90, 55 + (n - 2) * 15)
         combination_risks.append({**combo, "risk_score": score})  # type: ignore[typeddict-item]
 
+    # Genel skor "en zayıf halka" mantığıyla hesaplanıyor: bir veri setinin
+    # riski, içindeki en riskli kolonun riskinden düşük olamaz.
+    #
+    # Önceki sürüm skorların ortalamasını alıyordu ve bu yanıltıcı sonuç
+    # veriyordu: düz metin bir parola tek başına 90 puan alırken, yanına 10
+    # tane hash'lenmiş kolon eklendiğinde ortalama düşüp aynı parola 15 puana
+    # (yani "düşük risk") iniyordu. Artık kolon eklemek skoru düşüremez.
     if scored_columns:
-        overall = round(sum(c["risk_score"] for c in scored_columns) / len(scored_columns))
+        scores = [c["risk_score"] for c in scored_columns]
+        overall = max(scores)
+        # Yaygınlık cezası: birden fazla gerçekten riskli kolon varsa durum
+        # tek bir riskli kolondan daha kötüdür, küçük bir ek puan bindiriyoruz.
+        risky_count = sum(1 for s in scores if s >= _RISKY_SCORE_THRESHOLD)
+        overall += min(_MAX_BREADTH_PENALTY, max(0, risky_count - 1) * _BREADTH_PENALTY_STEP)
     else:
         overall = 0
+
     if combination_risks:
-        overall = min(100, overall + max(cr["risk_score"] for cr in combination_risks) // 4)
+        overall += max(cr["risk_score"] for cr in combination_risks) // 4
+
+    overall = min(100, overall)
 
     if overall >= 70:
         risk_level = "high"
@@ -291,8 +307,7 @@ def score_risks(column_analysis: ColumnAnalysis) -> RiskScoring:
     }
 
 
-# ── Adım 3: rapor üretimi (LLM, kural tabanlı yedekli) ──────────────────────
-
+# Adım 3: rapor üretimi (LLM, kural tabanlı yedekli)
 _NARRATIVE_PROMPT_TEMPLATE = """Sen bir KVKK (Türkiye kişisel verilerin korunması kanunu) teknik risk \
 analistisin. Aşağıda bir CSV veri setinin anonimleştirme analizi ve \
 deterministik risk skorları var. Görevin SADECE gerekçe ve öneri metni \
@@ -477,9 +492,7 @@ def generate_narrative(
         return _generate_narrative_fallback(column_analysis, risk_scoring, fallback_reason=str(exc))
 
 
-# ── Orkestrasyon: LangGraph StateGraph ───────────────────────────────────────
-
-
+# Orkestrasyon: LangGraph StateGraph
 def _build_agent_graph(df: pd.DataFrame, llm: NarrativeLLM | None):
     """df ve llm, node'lara closure ile bağlanır (graph state'i JSON'a
     yakın ve sade kalır - DataFrame/LLM istemcisi gibi serileştirilemeyen

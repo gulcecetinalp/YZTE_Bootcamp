@@ -13,6 +13,7 @@ from typing import Literal
 import pandas as pd
 from fastapi import APIRouter, HTTPException, Query
 
+from app.services import csv_io
 from app.services.comparison import build_comparison_charts
 from app.services.synthetic_faker import generate_synthetic_faker
 from app.storage import csv_path
@@ -69,7 +70,7 @@ def generate_synthetic(
         )
 
     try:
-        df = pd.read_csv(source)
+        df = csv_io.read_csv(source)
     except Exception:
         raise HTTPException(
             status_code=400,
@@ -87,7 +88,7 @@ def generate_synthetic(
     method_used: str = ""
     ctgan_error: str | None = None
 
-    # ── CTGAN denemesi ────────────────────────────────────────────────────────
+    # CTGAN denemesi
     if method in ("ctgan", "auto"):
         try:
             from app.services.synthetic_ctgan import generate_synthetic_ctgan
@@ -104,7 +105,7 @@ def generate_synthetic(
             ctgan_error = str(exc)
             logger.exception("CTGAN beklenmedik hata: %s", exc)
 
-    # ── Faker fallback / doğrudan Faker ──────────────────────────────────────
+    # Faker fallback / doğrudan Faker
     if df_syn is None:
         if method == "ctgan":
             # Kesinlikle CTGAN istendi ama başarısız oldu → hata döndür
@@ -127,7 +128,7 @@ def generate_synthetic(
                 detail=f"Sentetik veri üretimi başarısız oldu: {exc}",
             )
 
-    # ── Sonucu kaydet ─────────────────────────────────────────────────────────
+    # Sonucu kaydet
     synthetic_file_id = str(uuid.uuid4())
     df_syn.to_csv(csv_path(synthetic_file_id), index=False)
 

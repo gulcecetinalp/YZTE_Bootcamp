@@ -12,6 +12,14 @@ function getApiUrl(): string {
   return `${window.location.protocol}//${window.location.hostname}:${API_PORT}`;
 }
 
+/**
+ * İndirme bağlantısı. Basit bir GET olduğu için fetch'e gerek yok; bu adresi
+ * doğrudan bir <a download> etiketine href olarak veriyoruz.
+ */
+export function downloadUrl(fileId: string, label: string): string {
+  return `${getApiUrl()}/api/download/${fileId}?label=${encodeURIComponent(label)}`;
+}
+
 export interface ColumnInfo {
   name: string;
   dtype: string;
