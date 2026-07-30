@@ -47,6 +47,8 @@ LEGAL_NOTICE = (
 # isimleriyle birebir eşleşmeli (lowercase, snake_case).
 _BASE_RISK_WEIGHTS: dict[str, int] = {
     "national_id": 95,
+    "credential": 90,
+    "cvv": 90,
     "iban": 85,
     "card_number": 85,
     "address": 70,

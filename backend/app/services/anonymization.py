@@ -47,6 +47,13 @@ def _mask_keep_last(value: object, keep: int) -> str:
     return "*" * max(len(digits) - keep, 3) + digits[-keep:]
 
 
+def _mask_full(value: object) -> str:
+    # CVV gibi kısa alanlarda son N haneyi göstermek anlamsız (2-3 hanenin
+    # 1'i bile açık kalırsa güvenlik değeri neredeyse sıfırlanır) - bu yüzden
+    # kısmi maskeleme yerine tamamen gizliyoruz.
+    return "***"
+
+
 _STRATEGIES: dict[str, tuple[str, object]] = {
     "id": ("hashed", _hash_value),
     "name": ("masked", _mask_text),
@@ -56,6 +63,12 @@ _STRATEGIES: dict[str, tuple[str, object]] = {
     "national_id": ("masked", lambda v: _mask_keep_last(v, keep=2)),
     "iban": ("masked", lambda v: _mask_keep_last(v, keep=4)),
     "card_number": ("masked", lambda v: _mask_keep_last(v, keep=4)),
+    # credential (username/password): kısmi gösterim yok, tam hash.
+    # id ile aynı fonksiyon ama kavramsal olarak ayrı kategori - yarın
+    # farklı bir strateji (ör. tuzlu hash) gerekirse id'yi etkilemeden
+    # değiştirilebilir.
+    "credential": ("hashed", _hash_value),
+    "cvv": ("masked", _mask_full),
 }
 
 

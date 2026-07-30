@@ -26,10 +26,22 @@ _TOKEN_CATEGORIES: list[tuple[set[str], str]] = [
     ({"name", "isim", "firstname", "fullname"}, "name"),
     ({"address", "adres"}, "address"),
     ({"id", "customerid"}, "id"),
-    ({"geography", "country", "city", "location", "ulke", "sehir", "il"}, "location"),
+    (
+        {"geography", "country", "city", "location", "ulke", "sehir", "il",
+         "postal", "zip", "posta", "district", "ilce"},
+        "location",
+    ),
     ({"gender", "cinsiyet", "sex"}, "gender"),
     ({"age", "yas"}, "age"),
     ({"birth", "dogum", "birthdate"}, "birthdate"),
+    # username/password: ikisi de "credential" - tek kategori, aynı işlem
+    # (tam hash, kısmi gösterim yok). Kart no ve CVV ayrı kategoriler çünkü
+    # farklı anonimleştirme stratejileri gerekiyor (kart no son 4 hane
+    # gösterilebilir - PCI DSS'e uygun -, CVV hiç gösterilmemeli).
+    ({"username", "kullaniciadi"}, "credential"),
+    ({"password", "sifre", "parola"}, "credential"),
+    ({"card", "kart"}, "card_number"),
+    ({"cvv", "cvc"}, "cvv"),
 ]
 
 QUASI_CATEGORIES = {"location", "gender", "age", "birthdate"}
@@ -88,7 +100,12 @@ def detect_sensitive_columns(df: pd.DataFrame) -> list[dict]:
         detected_by = "column_name"
         match_ratio = None
 
-        if category is None and df[column].dtype == object:
+        if category is None:
+            # Not: dtype burada süzülmüyor. pandas tamamen rakamdan oluşan
+            # kolonları (kart no, CVV, telefon...) otomatik olarak int64
+            # yapıyor; sadece object (metin) kolonlarını taramak bunları
+            # görünmez kılıyordu. _match_content zaten astype(str) yapıyor,
+            # bu yüzden dtype'tan bağımsız güvenle çağrılabilir.
             content_match = _match_content(df[column])
             if content_match is not None:
                 category, match_ratio = content_match
