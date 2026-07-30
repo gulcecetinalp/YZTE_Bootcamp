@@ -205,7 +205,7 @@ export default function Home() {
       .map((a) => a.column),
   );
 
-  async function handleSynthesize() {
+  async function handleSynthesize(method: "auto" | "ctgan" | "faker" = "auto") {
     if (!analysisResult || synthesizing) return;
     setSynthesizing(true);
     setError(null);
@@ -213,7 +213,7 @@ export default function Home() {
       // Önemli: sentetik veriyi anonimleştirilmiş dosyadan üretiyoruz
       // (anonymized_file_id), ham/orijinal veriyi modele hiç vermiyoruz.
       // Böylece üretilen sahte veri gerçek kişisel bilgiye dayanmıyor.
-      setSynthResult(await synthesizeCsv(analysisResult.anonymized_file_id));
+      setSynthResult(await synthesizeCsv(analysisResult.anonymized_file_id, method));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sentetik veri üretilemedi.");
     } finally {
@@ -246,7 +246,7 @@ export default function Home() {
         </p>
       </section>
 
-      <section className="rounded-2xl border border-emerald-950/70 bg-[#0e1613] p-6">
+      <section id="upload-section" className="rounded-2xl border border-emerald-950/70 bg-[#0e1613] p-6">
         <label
           htmlFor={inputId}
           onDragOver={(e) => {
@@ -533,20 +533,30 @@ export default function Home() {
           </div>
 
           {/* Sentetik Veri Üretimi (SCRUM-32) */}
-          <div className="rounded-2xl border border-emerald-950/70 bg-[#0e1613] p-6">
+          <div id="synthetic-section" className="rounded-2xl border border-emerald-950/70 bg-[#0e1613] p-6">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold">Sentetik Veri Üretimi</h3>
-              <button
-                onClick={handleSynthesize}
-                disabled={synthesizing}
-                className="rounded-full bg-emerald-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {synthesizing
-                  ? "Üretiliyor..."
-                  : synthResult
-                  ? "Yeniden Üret"
-                  : "Sentetik Veri Üret"}
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleSynthesize("faker")}
+                  disabled={synthesizing}
+                  className="rounded-full border border-emerald-500/40 bg-emerald-950/40 px-4 py-2 text-sm font-medium text-emerald-300 transition-colors hover:bg-emerald-900/60 disabled:cursor-not-allowed disabled:opacity-60"
+                  title="Faker yöntemiyle anında / saniyeler içinde sentetik veri üretir"
+                >
+                  ⚡ Hızlı Deneme (Faker)
+                </button>
+                <button
+                  onClick={() => handleSynthesize("auto")}
+                  disabled={synthesizing}
+                  className="rounded-full bg-emerald-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {synthesizing
+                    ? "Üretiliyor..."
+                    : synthResult
+                    ? "Yeniden Üret (CTGAN)"
+                    : "Sentetik Veri Üret (CTGAN)"}
+                </button>
+              </div>
             </div>
             <p className="mt-2 text-sm text-neutral-500">
               Anonimleştirilmiş veriye istatistiksel olarak benzeyen, ama gerçek
@@ -738,7 +748,7 @@ export default function Home() {
           </div>
 
           {/* KVKK Risk Raporu (SCRUM-25/26) */}
-          <div className="rounded-2xl border border-emerald-950/70 bg-[#0e1613] p-6">
+          <div id="reports-section" className="rounded-2xl border border-emerald-950/70 bg-[#0e1613] p-6">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold">KVKK Risk Raporu</h3>
               <button

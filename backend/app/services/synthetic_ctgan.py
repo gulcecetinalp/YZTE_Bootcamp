@@ -41,7 +41,7 @@ except ImportError:  # pragma: no cover
 def generate_synthetic_ctgan(
     df: pd.DataFrame,
     num_rows: int = 0,
-    epochs: int = 300,
+    epochs: int = 30,
 ) -> tuple[pd.DataFrame, dict]:
     """CTGAN ile sentetik veri üretir.
 

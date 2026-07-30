@@ -1,4 +1,4 @@
-const API_PORT = "8001";
+const API_PORT = "8000";
 
 function getApiUrl(): string {
   if (process.env.NEXT_PUBLIC_API_URL) {

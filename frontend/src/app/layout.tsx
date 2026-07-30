@@ -41,23 +41,37 @@ export default function RootLayout({
               </span>
             </div>
             <nav className="hidden items-center gap-8 text-sm md:flex">
-              {navItems.map((item) => (
-                <span
-                  key={item.label}
-                  className={
-                    item.active
-                      ? "font-medium text-white"
-                      : "cursor-not-allowed text-neutral-500"
-                  }
-                  title={item.active ? undefined : "Sonraki bir sprintte gelecek"}
-                >
-                  {item.label}
-                </span>
-              ))}
+              <a
+                href="#upload-section"
+                className="text-neutral-300 transition-colors hover:text-white"
+              >
+                Yükle
+              </a>
+              <a
+                href="#analysis-results"
+                className="text-neutral-300 transition-colors hover:text-white"
+              >
+                Anonimleştir
+              </a>
+              <a
+                href="#synthetic-section"
+                className="text-neutral-300 transition-colors hover:text-white"
+              >
+                Üret
+              </a>
+              <a
+                href="#reports-section"
+                className="text-neutral-300 transition-colors hover:text-white"
+              >
+                Raporlar
+              </a>
             </nav>
-            <span className="rounded-full bg-emerald-500 px-4 py-1.5 text-sm font-medium text-emerald-950">
+            <a
+              href="#upload-section"
+              className="rounded-full bg-emerald-500 px-4 py-1.5 text-sm font-medium text-emerald-950 transition-colors hover:bg-emerald-400"
+            >
               Projeye Başla
-            </span>
+            </a>
           </div>
         </header>
         <main className="mx-auto max-w-6xl px-6 py-10">{children}</main>

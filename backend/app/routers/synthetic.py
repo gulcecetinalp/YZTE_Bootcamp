@@ -42,7 +42,7 @@ def generate_synthetic(
         description="Üretilecek satır sayısı. 0 = orijinal veri kadar.",
     ),
     epochs: int = Query(
-        default=300,
+        default=30,
         ge=10,
         le=2000,
         description="Yalnızca CTGAN için geçerli eğitim epoch sayısı.",
