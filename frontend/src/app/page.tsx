@@ -154,7 +154,7 @@ export default function Home() {
     if (!selected) return;
     if (!selected.name.toLowerCase().endsWith(".csv")) {
       setFile(null);
-      setError("Only .csv files are supported.");
+      setError("Sadece .csv dosyaları desteklenir.");
       return;
     }
     setFile(selected);
@@ -176,7 +176,7 @@ export default function Home() {
     try {
       setResult(await uploadCsv(file));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed.");
+      setError(err instanceof Error ? err.message : "Yükleme başarısız oldu.");
     } finally {
       setUploading(false);
     }
@@ -240,9 +240,9 @@ export default function Home() {
   return (
     <div className="space-y-8">
       <section className="text-center">
-        <h1 className="text-3xl font-bold">Upload Your Dataset</h1>
+        <h1 className="text-3xl font-bold">Veri Setini Yükle</h1>
         <p className="mt-2 text-neutral-400">
-          Upload a CSV file to start the privacy-safe data pipeline.
+          Gizlilik odaklı veri işleme sürecini başlatmak için bir CSV dosyası yükleyin.
         </p>
       </section>
 
@@ -262,10 +262,10 @@ export default function Home() {
           }`}
         >
           <p className="mt-3 font-medium">
-            Drag &amp; drop your CSV file here, or click to browse
+            CSV dosyanızı buraya sürükleyin ya da seçmek için tıklayın
           </p>
           <p className="mt-1 text-sm text-neutral-500">
-            Only .csv files, up to 20 MB
+            Sadece .csv dosyaları, 20 MB'a kadar
           </p>
           <input
             id={inputId}
@@ -290,7 +290,7 @@ export default function Home() {
               disabled={uploading}
               className="rounded-full bg-emerald-500 px-5 py-2 text-sm font-medium text-emerald-950 transition-colors hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {uploading ? "Uploading..." : "Upload"}
+              {uploading ? "Yükleniyor..." : "Yükle"}
             </button>
           </div>
         )}
@@ -306,30 +306,30 @@ export default function Home() {
         <section className="grid gap-6 lg:grid-cols-3">
           <div className="rounded-2xl border border-emerald-950/70 bg-[#0e1613] p-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Dataset Status</h2>
+              <h2 className="text-lg font-semibold">Veri Seti Durumu</h2>
               <span className="rounded-full border border-emerald-500/50 px-3 py-0.5 text-xs text-emerald-400">
-                Active
+                Aktif
               </span>
             </div>
             <dl className="mt-6 space-y-5">
               <div>
-                <dt className="text-sm text-neutral-500">File</dt>
+                <dt className="text-sm text-neutral-500">Dosya</dt>
                 <dd className="mt-1 font-medium break-all">{result.filename}</dd>
               </div>
               <div className="flex gap-12">
                 <div>
-                  <dt className="text-sm text-neutral-500">Rows</dt>
+                  <dt className="text-sm text-neutral-500">Satır</dt>
                   <dd className="mt-1 text-2xl font-bold">
-                    {result.num_rows.toLocaleString("en-US")}
+                    {result.num_rows.toLocaleString("tr-TR")}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-sm text-neutral-500">Columns</dt>
+                  <dt className="text-sm text-neutral-500">Kolon</dt>
                   <dd className="mt-1 text-2xl font-bold">{result.num_columns}</dd>
                 </div>
               </div>
               <div>
-                <dt className="text-sm text-neutral-500">File ID</dt>
+                <dt className="text-sm text-neutral-500">Dosya ID</dt>
                 <dd className="mt-1 font-mono text-xs text-neutral-400 break-all">
                   {result.file_id}
                 </dd>
@@ -352,7 +352,7 @@ export default function Home() {
           </div>
 
           <div className="rounded-2xl border border-emerald-950/70 bg-[#0e1613] p-6 lg:col-span-2">
-            <h2 className="text-lg font-semibold">Detected Columns</h2>
+            <h2 className="text-lg font-semibold">Tespit Edilen Kolonlar</h2>
             <div className="mt-4 flex flex-wrap gap-2">
               {result.columns.map((col) => (
                 <span
@@ -365,7 +365,7 @@ export default function Home() {
               ))}
             </div>
 
-            <h2 className="mt-8 text-lg font-semibold">Preview (first 5 rows)</h2>
+            <h2 className="mt-8 text-lg font-semibold">Önizleme (ilk 5 satır)</h2>
             <div className="mt-4 overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead>
@@ -562,7 +562,7 @@ export default function Home() {
                     {synthResult.method_used === "ctgan" ? "CTGAN (SDV)" : "Faker"}
                   </span>
                   <span className="text-neutral-400">
-                    {synthResult.num_rows.toLocaleString("en-US")} satır ·{" "}
+                    {synthResult.num_rows.toLocaleString("tr-TR")} satır ·{" "}
                     {synthResult.num_columns} kolon
                   </span>
                   <a

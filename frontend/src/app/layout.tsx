@@ -4,14 +4,14 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "AegisAI",
   description:
-    "Detect and anonymize sensitive data in CSV datasets, generate privacy-safe synthetic data and KVKK risk reports.",
+    "CSV veri setlerindeki hassas verileri tespit edip anonimleştiren, gizlilik odaklı sentetik veri ve KVKK risk raporu üreten platform.",
 };
 
 const navItems = [
-  { label: "Dashboard", active: true },
-  { label: "Anonymize", active: false },
-  { label: "Generate", active: false },
-  { label: "Reports", active: false },
+  { label: "Pano", active: true },
+  { label: "Anonimleştir", active: false },
+  { label: "Üret", active: false },
+  { label: "Raporlar", active: false },
 ];
 
 export default function RootLayout({
@@ -49,14 +49,14 @@ export default function RootLayout({
                       ? "font-medium text-white"
                       : "cursor-not-allowed text-neutral-500"
                   }
-                  title={item.active ? undefined : "Coming in a later sprint"}
+                  title={item.active ? undefined : "Sonraki bir sprintte gelecek"}
                 >
                   {item.label}
                 </span>
               ))}
             </nav>
             <span className="rounded-full bg-emerald-500 px-4 py-1.5 text-sm font-medium text-emerald-950">
-              Start Project
+              Projeye Başla
             </span>
           </div>
         </header>

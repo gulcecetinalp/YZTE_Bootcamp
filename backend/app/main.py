@@ -1,8 +1,13 @@
+import asyncio
+import logging
 import os
+from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+
+logger = logging.getLogger(__name__)
 
 # .env proje kökünde (backend/ içinde değil). load_dotenv() argümansız
 # çağrıldığında bu dosyanın bulunduğu yerden başlayıp üst dizinlerde .env
@@ -12,6 +17,34 @@ from fastapi.middleware.cors import CORSMiddleware
 load_dotenv()
 
 from app.routers import anonymize, download, health, kvkk_report, synthetic, upload
+from app.storage import purge_expired
+
+# Yüklenen dosyalar kaç saat sonra silinsin. Env'den değiştirilebilir olsun
+# diye sabit tutmadık (ör. deploy'da daha kısa bir süre istenebilir).
+_CLEANUP_INTERVAL_SECONDS = 3600
+_FILE_MAX_AGE_HOURS = float(os.getenv("AEGISAI_FILE_MAX_AGE_HOURS", "24"))
+
+
+async def _periodic_cleanup() -> None:
+    """Belirli aralıklarla uploads/ klasöründeki süresi dolmuş dosyaları siler.
+
+    Sonsuz döngü CancelledError ile duracak şekilde tasarlandı; uygulama
+    kapanırken lifespan bu görevi iptal ediyor.
+    """
+    while True:
+        try:
+            purge_expired(max_age_hours=_FILE_MAX_AGE_HOURS)
+        except Exception:  # noqa: BLE001 - arka plan görevi asla sessizce ölmemeli
+            logger.exception("Periyodik dosya temizliği sırasında hata oluştu.")
+        await asyncio.sleep(_CLEANUP_INTERVAL_SECONDS)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    purge_expired(max_age_hours=_FILE_MAX_AGE_HOURS)  # başlangıçta bir kez
+    task = asyncio.create_task(_periodic_cleanup())
+    yield
+    task.cancel()
 
 # Local geliştirmede frontend hep bu adreslerde açılıyor. Deploy edince
 # domain değişeceği için origin'leri koda gömmek yerine env'den okuyoruz.
@@ -35,6 +68,7 @@ app = FastAPI(
     title="AegisAI API",
     description="CSV veri setlerinde hassas veri tespiti, anonimleştirme ve sentetik veri üretimi platformu",
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(

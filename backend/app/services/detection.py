@@ -23,7 +23,7 @@ _TOKEN_CATEGORIES: list[tuple[set[str], str]] = [
     ({"email", "eposta", "mail"}, "email"),
     ({"phone", "telefon", "tel", "gsm", "mobile"}, "phone"),
     ({"surname", "soyad", "soyadi", "lastname"}, "name"),
-    ({"name", "isim", "firstname", "fullname"}, "name"),
+    ({"name", "isim", "firstname", "fullname", "ad", "adi", "adsoyad"}, "name"),
     ({"address", "adres"}, "address"),
     ({"id", "customerid"}, "id"),
     (
